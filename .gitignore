@@ -3,6 +3,7 @@ backend/node_modules/
 backend/uploads/
 .env
 .env.*
+!.env.example
 
 # ── Dart alıştırma dosyaları (ürünün parçası değil) ──
 dart_alistirma/
