@@ -11,3 +11,117 @@ generator client {
 datasource db {
   provider = "postgresql"
 }
+
+enum Role {
+  USER
+  ADMIN
+}
+
+enum OrderStatus {
+  PENDING
+  PAID
+  PREPARING
+  SHIPPED
+  DELIVERED
+  CANCELLED
+}
+
+model User {
+  id           Int      @id @default(autoincrement())
+  email        String   @unique
+  passwordHash String
+  fullName     String
+  role         Role     @default(USER)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  cartItems CartItem[]
+  orders    Order[]
+  favorites Favorite[]
+}
+
+model Category {
+  id        Int      @id @default(autoincrement())
+  name      String   @unique
+  slug      String   @unique
+  imageUrl  String?
+  createdAt DateTime @default(now())
+
+  products Product[]
+}
+
+model Product {
+  id          Int      @id @default(autoincrement())
+  name        String
+  description String
+  price       Decimal  @db.Decimal(10, 2)
+  stock       Int      @default(0)
+  imageUrl    String?
+  isActive    Boolean  @default(true)
+  categoryId  Int
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  category   Category    @relation(fields: [categoryId], references: [id])
+  cartItems  CartItem[]
+  orderItems OrderItem[]
+  favorites  Favorite[]
+
+  @@index([categoryId])
+  @@index([name])
+}
+
+model CartItem {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  productId Int
+  quantity  Int      @default(1)
+  createdAt DateTime @default(now())
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, productId])
+}
+
+model Order {
+  id             Int         @id @default(autoincrement())
+  userId         Int
+  totalAmount    Decimal     @db.Decimal(10, 2)
+  status         OrderStatus @default(PENDING)
+  addressText    String
+  cardLast4      String?     @db.VarChar(4)
+  cardHolderName String?
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+
+  user  User        @relation(fields: [userId], references: [id])
+  items OrderItem[]
+
+  @@index([userId])
+}
+
+model OrderItem {
+  id        Int     @id @default(autoincrement())
+  orderId   Int
+  productId Int
+  quantity  Int
+  unitPrice Decimal @db.Decimal(10, 2)
+
+  order   Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id])
+
+  @@index([orderId])
+}
+
+model Favorite {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  productId Int
+  createdAt DateTime @default(now())
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, productId])
+}
