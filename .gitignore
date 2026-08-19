@@ -1,0 +1,15 @@
+# ── Backend (Gün 3'ten itibaren) ──
+backend/node_modules/
+backend/uploads/
+.env
+.env.*
+
+# ── Dart alıştırma dosyaları (ürünün parçası değil) ──
+dart_alistirma/
+
+# ── Editör ve işletim sistemi ──
+.vscode/
+.idea/
+*.iml
+Thumbs.db
+*.log
