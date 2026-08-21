@@ -7,6 +7,7 @@ const authRoutes = require('./routes/auth.routes');
 const errorHandler = require('./middleware/errorHandler');
 const categoryRoutes = require('./routes/category.routes');
 const productRoutes = require('./routes/product.routes');
+const uploadRoutes = require('./routes/upload.routes');
 
 const app = express();
 
@@ -21,6 +22,8 @@ app.get('/api/health', (req, res) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/categories', categoryRoutes);
 app.use('/api/products', productRoutes);
+app.use('/api/upload', uploadRoutes);
+app.use('/uploads', express.static('uploads'));
 
 app.use((req, res) => {
   res.status(404).json({ message: 'Böyle bir uç bulunamadı.' });
