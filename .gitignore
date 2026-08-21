@@ -8,6 +8,9 @@ backend/uploads/
 # ── Dart alıştırma dosyaları (ürünün parçası değil) ──
 dart_alistirma/
 
+# ── Staj defteri görselleri (kodun parçası değil) ──
+docs/gorseller/
+
 # ── Editör ve işletim sistemi ──
 .vscode/
 .idea/
