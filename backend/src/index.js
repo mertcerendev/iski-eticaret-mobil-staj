@@ -8,6 +8,8 @@ const errorHandler = require('./middleware/errorHandler');
 const categoryRoutes = require('./routes/category.routes');
 const productRoutes = require('./routes/product.routes');
 const uploadRoutes = require('./routes/upload.routes');
+const cartRoutes = require('./routes/cart.routes');
+const favoriteRoutes = require('./routes/favorite.routes');
 
 const app = express();
 
@@ -23,6 +25,8 @@ app.use('/api/auth', authRoutes);
 app.use('/api/categories', categoryRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/upload', uploadRoutes);
+app.use('/api/cart', cartRoutes);
+app.use('/api/favorites', favoriteRoutes);
 app.use('/uploads', express.static('uploads'));
 
 app.use((req, res) => {
