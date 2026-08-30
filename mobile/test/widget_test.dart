@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:provider/provider.dart';
 
 import 'package:mobile/core/dogrulayicilar.dart';
 import 'package:mobile/models/kategori.dart';
 import 'package:mobile/models/sayfali_sonuc.dart';
 import 'package:mobile/models/urun.dart';
+import 'package:mobile/providers/favori_provider.dart';
 import 'package:mobile/widgets/urun_karti.dart';
 
 void main() {
@@ -15,14 +17,20 @@ void main() {
   group('UrunKarti', () {
     /// Kart ızgara hücresi için tasarlandı; testte de hücreye benzer
     /// sınırlı bir alan verilir, yoksa dikey taşma olur.
+    ///
+    /// Karttaki kalp düğmesi `FavoriProvider`'ı okuduğu için sağlayıcı da
+    /// ağaca eklenir. Sağlayıcı ağ isteği atmaz; yalnızca boş başlar.
     Widget sar(Urun urun) {
-      return MaterialApp(
-        home: Scaffold(
-          body: Center(
-            child: SizedBox(
-              width: 180,
-              height: 290,
-              child: UrunKarti(urun: urun),
+      return ChangeNotifierProvider(
+        create: (_) => FavoriProvider(),
+        child: MaterialApp(
+          home: Scaffold(
+            body: Center(
+              child: SizedBox(
+                width: 180,
+                height: 290,
+                child: UrunKarti(urun: urun),
+              ),
             ),
           ),
         ),

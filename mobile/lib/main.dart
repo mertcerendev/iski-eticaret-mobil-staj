@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import 'core/theme/app_theme.dart';
 import 'providers/auth_provider.dart';
+import 'providers/favori_provider.dart';
 import 'providers/urun_provider.dart';
 import 'screens/ana_ekran.dart';
 import 'screens/giris_ekrani.dart';
@@ -26,6 +27,7 @@ class UygulamaKoku extends StatelessWidget {
         // Ürün listesi giriş ekranında da bellekte durur ama isteği
         // ancak ana ekran açıldığında atar.
         ChangeNotifierProvider(create: (_) => UrunProvider()),
+        ChangeNotifierProvider(create: (_) => FavoriProvider()),
       ],
       child: MaterialApp(
         title: 'İSKİ E-Ticaret',

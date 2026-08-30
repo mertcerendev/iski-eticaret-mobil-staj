@@ -2,10 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../providers/auth_provider.dart';
+import '../providers/favori_provider.dart';
 import '../providers/urun_provider.dart';
 import '../services/urun_service.dart';
 import '../widgets/durum_gorunumleri.dart';
 import '../widgets/urun_karti.dart';
+import 'favoriler_ekrani.dart';
+import 'urun_detay_ekrani.dart';
 
 class AnaEkran extends StatefulWidget {
   const AnaEkran({super.key});
@@ -32,7 +35,14 @@ class _AnaEkraniDurumu extends State<AnaEkran> {
     // `notifyListeners()` çağrılırsa Flutter hata verir. Bu yüzden ilk
     // kareden sonraya bırakılır.
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) context.read<UrunProvider>().baslat();
+      if (!mounted) return;
+
+      context.read<UrunProvider>().baslat();
+
+      // Kartlardaki kalbin dolu mu boş mu çizileceği bu listeye bakılarak
+      // belirlenir; ürün ucu favori bilgisi döndürmediği için bir kez
+      // ayrıca çekilir.
+      context.read<FavoriProvider>().yukle();
     });
   }
 
@@ -57,6 +67,13 @@ class _AnaEkraniDurumu extends State<AnaEkran> {
       appBar: AppBar(
         title: const Text('Ürünler'),
         actions: [
+          IconButton(
+            tooltip: 'Favorilerim',
+            icon: const Icon(Icons.favorite_border),
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const FavorilerEkrani()),
+            ),
+          ),
           IconButton(
             tooltip: 'Çıkış yap',
             icon: const Icon(Icons.logout),
@@ -120,7 +137,18 @@ class _AnaEkraniDurumu extends State<AnaEkran> {
                 childAspectRatio: 0.62,
               ),
               delegate: SliverChildBuilderDelegate(
-                (context, sira) => UrunKarti(urun: saglayici.urunler[sira]),
+                (context, sira) {
+                  final urun = saglayici.urunler[sira];
+
+                  return UrunKarti(
+                    urun: urun,
+                    onTap: () => Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => UrunDetayEkrani(urun: urun),
+                      ),
+                    ),
+                  );
+                },
                 childCount: saglayici.urunler.length,
               ),
             ),

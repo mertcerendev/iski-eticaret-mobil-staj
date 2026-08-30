@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 
 import '../core/constants/api_constants.dart';
 import '../models/urun.dart';
+import 'favori_dugmesi.dart';
 
 /// Izgarada tek bir ürünü gösteren kart.
 ///
@@ -28,9 +29,14 @@ class UrunKarti extends StatelessWidget {
           children: [
             Stack(
               children: [
-                AspectRatio(
-                  aspectRatio: 1,
-                  child: _Gorsel(adres: urun.gorselUrl),
+                // Aynı etiket detay ekranındaki görselde de var; iki ekran
+                // arasında büyüyerek geçen animasyonu Hero kuruyor.
+                Hero(
+                  tag: 'urun-gorsel-${urun.id}',
+                  child: AspectRatio(
+                    aspectRatio: 1,
+                    child: _Gorsel(adres: urun.gorselUrl),
+                  ),
                 ),
 
                 // Stok bilgisi görselin üzerinde rozet olarak durur;
@@ -39,6 +45,22 @@ class UrunKarti extends StatelessWidget {
                   top: 8,
                   left: 8,
                   child: _StokRozeti(urun: urun),
+                ),
+
+                Positioned(
+                  top: 2,
+                  right: 2,
+                  child: DecoratedBox(
+                    decoration: const BoxDecoration(
+                      color: Colors.white70,
+                      shape: BoxShape.circle,
+                    ),
+                    child: SizedBox(
+                      width: 36,
+                      height: 36,
+                      child: FavoriDugmesi(urun: urun),
+                    ),
+                  ),
                 ),
               ],
             ),
@@ -60,15 +82,18 @@ class UrunKarti extends StatelessWidget {
                   ),
                   const SizedBox(height: 4),
 
-                  Text(
-                    urun.kategori?.ad ?? '',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.grey.shade600,
+                  // Bazı uçlar ürünü kategorisiz döndürebilir; o durumda
+                  // boş satır bırakmak yerine hiç çizilmez.
+                  if (urun.kategori != null)
+                    Text(
+                      urun.kategori!.ad,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey.shade600,
+                      ),
                     ),
-                  ),
                   const SizedBox(height: 8),
 
                   Text(

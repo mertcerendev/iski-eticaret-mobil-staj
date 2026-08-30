@@ -8,6 +8,7 @@ const URUN_ALANLARI = {
   stock: true,
   imageUrl: true,
   isActive: true,
+  category: { select: { id: true, name: true, slug: true } },
 };
 
 async function listele(kullaniciId) {
