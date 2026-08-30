@@ -1,24 +1,70 @@
+import 'kategori.dart';
+
+/// Sunucudaki `Product` kaydının karşılığı.
 class Urun {
-    final String ad;
-    final String kategori;
-    final double fiyat;
-    final int stok;
-    final String? gorselUrl;
+  final int id;
+  final String ad;
+  final String aciklama;
+  final double fiyat;
+  final int stok;
+  final String? gorselUrl;
+  final bool aktif;
+  final int kategoriId;
 
-    const Urun({
-        required this.ad,
-        required this.kategori,
-        required this.fiyat,
-        required this.stok,
-        this.gorselUrl,
-    });
+  /// Sunucu ürünü `include` ile kategorisiyle birlikte döndürür.
+  /// Bazı uçlarda (örneğin sepet) gelmediği için boş olabilir.
+  final Kategori? kategori;
 
-    bool get stoktaVar => stok > 0;
-    bool get sonUrunler => stok > 0 && stok < 5;
+  const Urun({
+    required this.id,
+    required this.ad,
+    required this.aciklama,
+    required this.fiyat,
+    required this.stok,
+    required this.kategoriId,
+    this.gorselUrl,
+    this.aktif = true,
+    this.kategori,
+  });
 
-    String get stokMetni {
-        if (!stoktaVar) return 'Tükendi';
-        if (sonUrunler) return 'Son $stok adet';
-        return 'Stokta';
-    } 
+  // ── Hesaplanan özellikler ───────────────────────────────────────
+  // Bu kararlar modelin içinde durur. Ekran "stok > 0 mu" diye
+  // sorgulamaz, hazır cevabı okur; kural değişirse tek yer değişir.
+
+  bool get stoktaVar => stok > 0;
+
+  bool get sonUrunler => stok > 0 && stok < 5;
+
+  String get stokMetni {
+    if (!stoktaVar) return 'Tükendi';
+    if (sonUrunler) return 'Son $stok adet';
+    return 'Stokta';
+  }
+
+  String get fiyatMetni => '${fiyat.toStringAsFixed(2)} TL';
+
+  /// Sunucu `price` alanını `Decimal` tipinden metin olarak gönderir
+  /// ("1499.9"). Kuruş hassasiyeti sunucuda korunduğu için burada
+  /// gösterim amaçlı `double`'a çevrilir.
+  static double _sayiyaCevir(Object? deger) {
+    if (deger == null) return 0;
+    if (deger is num) return deger.toDouble();
+    return double.tryParse(deger.toString()) ?? 0;
+  }
+
+  factory Urun.fromJson(Map<String, dynamic> json) {
+    return Urun(
+      id: json['id'] as int,
+      ad: json['name'] as String,
+      aciklama: (json['description'] as String?) ?? '',
+      fiyat: _sayiyaCevir(json['price']),
+      stok: (json['stock'] as int?) ?? 0,
+      gorselUrl: json['imageUrl'] as String?,
+      aktif: (json['isActive'] as bool?) ?? true,
+      kategoriId: (json['categoryId'] as int?) ?? 0,
+      kategori: json['category'] == null
+          ? null
+          : Kategori.fromJson(json['category'] as Map<String, dynamic>),
+    );
+  }
 }

@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
-import 'models/urun.dart';
-import 'widgets/urun_karti.dart';
+import 'package:provider/provider.dart';
+
+import 'core/theme/app_theme.dart';
+import 'providers/auth_provider.dart';
+import 'screens/ana_ekran.dart';
+import 'screens/giris_ekrani.dart';
 
 void main() {
   runApp(const UygulamaKoku());
@@ -11,47 +15,64 @@ class UygulamaKoku extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'İSKİ E-Ticaret',
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.indigo),
-        useMaterial3: true,
+    // Sağlayıcı en tepede kurulur: altındaki her ekran oturum bilgisine
+    // ulaşabilir, ekrandan ekrana parametre taşımaya gerek kalmaz.
+    return ChangeNotifierProvider(
+      create: (_) => AuthProvider()..acilistaKontrolEt(),
+      child: MaterialApp(
+        title: 'İSKİ E-Ticaret',
+        debugShowCheckedModeBanner: false,
+        theme: UygulamaTemasi.acik,
+        home: const OturumKapisi(),
       ),
-      home: const UrunListesiSayfasi(),
     );
   }
 }
 
-// ─────────────────────────────────────────────────────────────
-// GEÇİCİ VERİ — Gün 9'da bu blok silinecek, yerine
-// API'den gelen gerçek ürünler kullanılacak.
-// ─────────────────────────────────────────────────────────────
-const sahteUrunler = <Urun>[
-  Urun(ad: 'Kablosuz Kulaklık', kategori: 'Elektronik', fiyat: 1499.90, stok: 25),
-  Urun(ad: 'Kablosuz Mouse', kategori: 'Elektronik', fiyat: 299.90, stok: 3),
-  Urun(ad: 'Mekanik Klavye', kategori: 'Elektronik', fiyat: 899.90, stok: 0),
-  Urun(ad: 'Akıllı Saat', kategori: 'Elektronik', fiyat: 2299.00, stok: 1),
-  Urun(ad: 'Bluetooth Hoparlör', kategori: 'Elektronik', fiyat: 799.90, stok: 18),
-  Urun(ad: 'Kahve Makinesi', kategori: 'Ev Aletleri', fiyat: 3499.00, stok: 7),
-  Urun(ad: 'Su Isıtıcı', kategori: 'Ev Aletleri', fiyat: 649.90, stok: 12),
-  Urun(ad: 'Tost Makinesi', kategori: 'Ev Aletleri', fiyat: 549.90, stok: 0),
-];
+/// Oturum durumuna göre hangi ekranın açılacağına karar verir.
+///
+/// Giriş ve kayıt ekranları başarı sonrası elle yönlendirme yapmaz;
+/// durumu değiştirirler, karar tek yerde — burada — verilir.
+class OturumKapisi extends StatelessWidget {
+  const OturumKapisi({super.key});
 
-class UrunListesiSayfasi extends StatelessWidget {
-  const UrunListesiSayfasi({super.key});
+  @override
+  Widget build(BuildContext context) {
+    final durum = context.watch<AuthProvider>().durum;
+
+    switch (durum) {
+      // Açılışta kayıtlı token sunucuya sorulurken kısa bir bekleme olur.
+      case OturumDurumu.kontrolEdiliyor:
+        return const _AcilisEkrani();
+
+      case OturumDurumu.cikisYapildi:
+        return const GirisEkrani();
+
+      case OturumDurumu.girisYapildi:
+        return const AnaEkran();
+    }
+  }
+}
+
+class _AcilisEkrani extends StatelessWidget {
+  const _AcilisEkrani();
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Ürünler'),
-      ),
-      body: ListView.builder(
-        itemCount: sahteUrunler.length,
-        itemBuilder: (context, index) {
-          return UrunKarti(urun: sahteUrunler[index]);
-        },
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.storefront,
+              size: 72,
+              color: Theme.of(context).colorScheme.primary,
+            ),
+            const SizedBox(height: 24),
+            const CircularProgressIndicator(),
+          ],
+        ),
       ),
     );
   }

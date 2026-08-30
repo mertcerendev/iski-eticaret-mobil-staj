@@ -41,7 +41,7 @@ class UrunKarti extends StatelessWidget {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    urun.kategori,
+                    urun.kategori?.ad ?? '',
                     style: TextStyle(
                       fontSize: 13,
                       color: Colors.grey.shade600,
@@ -49,7 +49,7 @@ class UrunKarti extends StatelessWidget {
                   ),
                   const SizedBox(height: 6),
                   Text(
-                    '${urun.fiyat.toStringAsFixed(2)} TL',
+                    urun.fiyatMetni,
                     style: const TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.w600,

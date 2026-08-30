@@ -1,17 +1,114 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:mobile/main.dart';
+import 'package:mobile/core/dogrulayicilar.dart';
+import 'package:mobile/models/kategori.dart';
+import 'package:mobile/models/urun.dart';
 import 'package:mobile/widgets/urun_karti.dart';
 
 void main() {
-  testWidgets('Ürün listesi ekranı ürün kartlarıyla çizilir', (tester) async {
-    await tester.pumpWidget(const UygulamaKoku());
+  // Uygulamanın kökü artık açılışta güvenli depoya ve sunucuya başvurduğu
+  // için doğrudan çizilemez. Bunun yerine dışa bağımlılığı olmayan
+  // parçalar sınanır: kart bileşeni, model dönüşümü ve doğrulayıcılar.
 
-    expect(find.text('Ürünler'), findsOneWidget);
+  group('UrunKarti', () {
+    Widget sar(Urun urun) {
+      return MaterialApp(home: Scaffold(body: UrunKarti(urun: urun)));
+    }
 
-    expect(find.byType(UrunKarti), findsWidgets);
+    testWidgets('ürün adını, kategorisini ve fiyatını gösterir', (tester) async {
+      await tester.pumpWidget(
+        sar(
+          const Urun(
+            id: 1,
+            ad: 'Kablosuz Kulaklık',
+            aciklama: 'Aktif gürültü engelleme.',
+            fiyat: 1499.90,
+            stok: 25,
+            kategoriId: 1,
+            kategori: Kategori(id: 1, ad: 'Elektronik', slug: 'elektronik'),
+          ),
+        ),
+      );
 
-    expect(find.text('Kablosuz Kulaklık'), findsOneWidget);
-    expect(find.text('1499.90 TL'), findsOneWidget);
+      expect(find.text('Kablosuz Kulaklık'), findsOneWidget);
+      expect(find.text('Elektronik'), findsOneWidget);
+      expect(find.text('1499.90 TL'), findsOneWidget);
+      expect(find.text('Stokta'), findsOneWidget);
+    });
+
+    testWidgets('stok bittiğinde "Tükendi" yazar', (tester) async {
+      await tester.pumpWidget(
+        sar(
+          const Urun(
+            id: 2,
+            ad: 'Mekanik Klavye',
+            aciklama: 'Mavi switch.',
+            fiyat: 899.90,
+            stok: 0,
+            kategoriId: 1,
+          ),
+        ),
+      );
+
+      expect(find.text('Tükendi'), findsOneWidget);
+    });
+
+    testWidgets('stok 5\'in altındayken kalan adedi yazar', (tester) async {
+      await tester.pumpWidget(
+        sar(
+          const Urun(
+            id: 3,
+            ad: 'Akıllı Saat',
+            aciklama: 'Nabız takibi.',
+            fiyat: 2299.00,
+            stok: 3,
+            kategoriId: 1,
+          ),
+        ),
+      );
+
+      expect(find.text('Son 3 adet'), findsOneWidget);
+    });
+  });
+
+  group('Urun.fromJson', () {
+    test('sunucudan gelen JSON nesneye çevrilir', () {
+      final urun = Urun.fromJson({
+        'id': 3,
+        'name': 'Akıllı Saat',
+        'description': 'Nabız ve uyku takibi.',
+        'price': '2299', // Decimal alan metin olarak gelir
+        'stock': 3,
+        'imageUrl': null,
+        'isActive': true,
+        'categoryId': 1,
+        'category': {'id': 1, 'name': 'Elektronik', 'slug': 'elektronik'},
+      });
+
+      expect(urun.ad, 'Akıllı Saat');
+      expect(urun.fiyat, 2299.0);
+      expect(urun.kategori?.ad, 'Elektronik');
+      expect(urun.sonUrunler, isTrue);
+    });
+  });
+
+  group('Dogrulayicilar', () {
+    test('geçersiz e-posta reddedilir', () {
+      expect(Dogrulayicilar.eposta(''), isNotNull);
+      expect(Dogrulayicilar.eposta('mert'), isNotNull);
+      expect(Dogrulayicilar.eposta('mert@test'), isNotNull);
+      expect(Dogrulayicilar.eposta('mert@test.com'), isNull);
+    });
+
+    test('kısa parola reddedilir', () {
+      expect(Dogrulayicilar.parola('1234'), isNotNull);
+      expect(Dogrulayicilar.parola('sifre1234'), isNull);
+    });
+
+    test('eşleşmeyen parola tekrarı reddedilir', () {
+      expect(Dogrulayicilar.parolaTekrari('abc', 'abd'), isNotNull);
+      expect(Dogrulayicilar.parolaTekrari('sifre1234', 'sifre1234'), isNull);
+    });
   });
 }
