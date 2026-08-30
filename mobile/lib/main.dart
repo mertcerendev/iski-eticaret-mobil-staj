@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import 'core/theme/app_theme.dart';
 import 'providers/auth_provider.dart';
+import 'providers/urun_provider.dart';
 import 'screens/ana_ekran.dart';
 import 'screens/giris_ekrani.dart';
 
@@ -15,10 +16,17 @@ class UygulamaKoku extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Sağlayıcı en tepede kurulur: altındaki her ekran oturum bilgisine
+    // Sağlayıcılar en tepede kurulur: altındaki her ekran bu durumlara
     // ulaşabilir, ekrandan ekrana parametre taşımaya gerek kalmaz.
-    return ChangeNotifierProvider(
-      create: (_) => AuthProvider()..acilistaKontrolEt(),
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider(
+          create: (_) => AuthProvider()..acilistaKontrolEt(),
+        ),
+        // Ürün listesi giriş ekranında da bellekte durur ama isteği
+        // ancak ana ekran açıldığında atar.
+        ChangeNotifierProvider(create: (_) => UrunProvider()),
+      ],
       child: MaterialApp(
         title: 'İSKİ E-Ticaret',
         debugShowCheckedModeBanner: false,
