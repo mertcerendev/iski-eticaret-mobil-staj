@@ -43,10 +43,12 @@ class Urun {
 
   String get fiyatMetni => '${fiyat.toStringAsFixed(2)} TL';
 
-  /// Sunucu `price` alanını `Decimal` tipinden metin olarak gönderir
-  /// ("1499.9"). Kuruş hassasiyeti sunucuda korunduğu için burada
-  /// gösterim amaçlı `double`'a çevrilir.
-  static double _sayiyaCevir(Object? deger) {
+  /// Sunucu para alanlarını (`price`, `subtotal`, `totalAmount`) `Decimal`
+  /// tipinden metin olarak gönderir ("1499.9"). Kuruş hassasiyeti sunucuda
+  /// korunduğu için burada gösterim amaçlı `double`'a çevrilir.
+  ///
+  /// Sepet modeli de aynı çeviriyi kullandığı için dışa açık.
+  static double sayiyaCevir(Object? deger) {
     if (deger == null) return 0;
     if (deger is num) return deger.toDouble();
     return double.tryParse(deger.toString()) ?? 0;
@@ -57,7 +59,7 @@ class Urun {
       id: json['id'] as int,
       ad: json['name'] as String,
       aciklama: (json['description'] as String?) ?? '',
-      fiyat: _sayiyaCevir(json['price']),
+      fiyat: sayiyaCevir(json['price']),
       stok: (json['stock'] as int?) ?? 0,
       gorselUrl: json['imageUrl'] as String?,
       aktif: (json['isActive'] as bool?) ?? true,

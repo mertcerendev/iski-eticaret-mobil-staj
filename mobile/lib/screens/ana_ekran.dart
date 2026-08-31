@@ -2,12 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../providers/auth_provider.dart';
-import '../providers/favori_provider.dart';
 import '../providers/urun_provider.dart';
 import '../services/urun_service.dart';
 import '../widgets/durum_gorunumleri.dart';
 import '../widgets/urun_karti.dart';
-import 'favoriler_ekrani.dart';
 import 'urun_detay_ekrani.dart';
 
 class AnaEkran extends StatefulWidget {
@@ -20,6 +18,10 @@ class AnaEkran extends StatefulWidget {
 class _AnaEkraniDurumu extends State<AnaEkran> {
   final _kaydirmaDenetleyici = ScrollController();
   final _aramaDenetleyici = TextEditingController();
+
+  /// Hero etiketlerinin bu sekmeye ait olduğunu belirtir; favoriler sekmesi
+  /// aynı anda ağaçta olduğu için etiketler ayrışmak zorunda.
+  static const String _heroOneki = 'liste';
 
   /// Liste sonuna bu kadar piksel kala sonraki sayfa istenir. Kullanıcı
   /// sona varmadan yükleme başlasın ki bekleme hissedilmesin.
@@ -38,11 +40,6 @@ class _AnaEkraniDurumu extends State<AnaEkran> {
       if (!mounted) return;
 
       context.read<UrunProvider>().baslat();
-
-      // Kartlardaki kalbin dolu mu boş mu çizileceği bu listeye bakılarak
-      // belirlenir; ürün ucu favori bilgisi döndürmediği için bir kez
-      // ayrıca çekilir.
-      context.read<FavoriProvider>().yukle();
     });
   }
 
@@ -64,23 +61,9 @@ class _AnaEkraniDurumu extends State<AnaEkran> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Ürünler'),
-        actions: [
-          IconButton(
-            tooltip: 'Favorilerim',
-            icon: const Icon(Icons.favorite_border),
-            onPressed: () => Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => const FavorilerEkrani()),
-            ),
-          ),
-          IconButton(
-            tooltip: 'Çıkış yap',
-            icon: const Icon(Icons.logout),
-            onPressed: _cikisOnayi,
-          ),
-        ],
-      ),
+      // Favorilere ve çıkışa artık alt gezinme çubuğundan gidiliyor;
+      // başlık çubuğunda simge kalmadı.
+      appBar: AppBar(title: const Text('Ürünler')),
       body: Column(
         children: [
           const _KullaniciSeridi(),
@@ -142,9 +125,13 @@ class _AnaEkraniDurumu extends State<AnaEkran> {
 
                   return UrunKarti(
                     urun: urun,
+                    heroOneki: _heroOneki,
                     onTap: () => Navigator.of(context).push(
                       MaterialPageRoute(
-                        builder: (_) => UrunDetayEkrani(urun: urun),
+                        builder: (_) => UrunDetayEkrani(
+                          urun: urun,
+                          heroOneki: _heroOneki,
+                        ),
                       ),
                     ),
                   );
@@ -180,32 +167,6 @@ class _AnaEkraniDurumu extends State<AnaEkran> {
         ],
       ),
     );
-  }
-
-  Future<void> _cikisOnayi() async {
-    final saglayici = context.read<AuthProvider>();
-
-    final onay = await showDialog<bool>(
-      context: context,
-      builder: (pencere) => AlertDialog(
-        title: const Text('Çıkış yapılsın mı?'),
-        content: const Text('Oturumunuz kapatılacak.'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(pencere).pop(false),
-            child: const Text('Vazgeç'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.of(pencere).pop(true),
-            child: const Text('Çıkış Yap'),
-          ),
-        ],
-      ),
-    );
-
-    if (onay == true) {
-      await saglayici.cikisYap();
-    }
   }
 }
 

@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import 'package:mobile/core/dogrulayicilar.dart';
 import 'package:mobile/models/kategori.dart';
 import 'package:mobile/models/sayfali_sonuc.dart';
+import 'package:mobile/models/sepet.dart';
 import 'package:mobile/models/urun.dart';
 import 'package:mobile/providers/favori_provider.dart';
 import 'package:mobile/widgets/urun_karti.dart';
@@ -29,7 +30,7 @@ void main() {
               child: SizedBox(
                 width: 180,
                 height: 290,
-                child: UrunKarti(urun: urun),
+                child: UrunKarti(urun: urun, heroOneki: 'test'),
               ),
             ),
           ),
@@ -159,6 +160,62 @@ void main() {
     test('eşleşmeyen parola tekrarı reddedilir', () {
       expect(Dogrulayicilar.parolaTekrari('abc', 'abd'), isNotNull);
       expect(Dogrulayicilar.parolaTekrari('sifre1234', 'sifre1234'), isNull);
+    });
+  });
+
+  group('Sepet.fromJson', () {
+    test('satırlar, toplam ve alınamayan ürün bayrağı çözülür', () {
+      final sepet = Sepet.fromJson({
+        'items': [
+          {
+            'id': 9,
+            'productId': 1,
+            'quantity': 2,
+            'product': {
+              'id': 1,
+              'name': 'Kablosuz Kulaklık',
+              'price': '1499.90',
+              'stock': 25,
+              'isActive': true,
+            },
+            'subtotal': '2999.80',
+            'satinAlinabilir': true,
+          },
+          {
+            'id': 10,
+            'productId': 2,
+            'quantity': 1,
+            'product': {
+              'id': 2,
+              'name': 'Mekanik Klavye',
+              'price': '899.90',
+              'stock': 0,
+              'isActive': true,
+            },
+            'subtotal': '899.90',
+            'satinAlinabilir': false,
+          },
+        ],
+        // Sunucu stoğu biten satırı toplama katmıyor: 2999.80 + 0
+        'totalAmount': '2999.80',
+        'itemCount': 2,
+        'totalQuantity': 3,
+      });
+
+      expect(sepet.satirlar, hasLength(2));
+      expect(sepet.satirlar.first.araToplam, 2999.80);
+      expect(sepet.satirlar.last.satinAlinabilir, isFalse);
+      expect(sepet.toplamTutar, 2999.80);
+      expect(sepet.toplamAdet, 3);
+      expect(sepet.bosMu, isFalse);
+    });
+
+    test('boş sepet başlangıç değeri', () {
+      const sepet = Sepet.bos();
+
+      expect(sepet.bosMu, isTrue);
+      expect(sepet.toplamAdet, 0);
+      expect(sepet.toplamMetni, '0.00 TL');
     });
   });
 }

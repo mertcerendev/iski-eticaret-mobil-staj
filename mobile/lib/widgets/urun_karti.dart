@@ -13,7 +13,20 @@ class UrunKarti extends StatelessWidget {
   final Urun urun;
   final VoidCallback? onTap;
 
-  const UrunKarti({super.key, required this.urun, this.onTap});
+  /// Hero etiketinin önüne eklenen sekme adı.
+  ///
+  /// Gün 11'de alt gezinme gelince ana sayfa ile favoriler `IndexedStack`
+  /// sayesinde aynı anda ağaçta durmaya başladı. Aynı ürün ikisinde birden
+  /// varsa iki Hero aynı etiketi taşıyor ve Flutter "aynı etiketli birden
+  /// çok Hero" hatası veriyor. Sekme adı öne eklenerek etiketler ayrılır.
+  final String heroOneki;
+
+  const UrunKarti({
+    super.key,
+    required this.urun,
+    required this.heroOneki,
+    this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -32,7 +45,7 @@ class UrunKarti extends StatelessWidget {
                 // Aynı etiket detay ekranındaki görselde de var; iki ekran
                 // arasında büyüyerek geçen animasyonu Hero kuruyor.
                 Hero(
-                  tag: 'urun-gorsel-${urun.id}',
+                  tag: '$heroOneki-urun-gorsel-${urun.id}',
                   child: AspectRatio(
                     aspectRatio: 1,
                     child: _Gorsel(adres: urun.gorselUrl),

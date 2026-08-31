@@ -9,6 +9,10 @@ import 'urun_detay_ekrani.dart';
 class FavorilerEkrani extends StatelessWidget {
   const FavorilerEkrani({super.key});
 
+  /// Ana sayfadakinden farklı olmak zorunda: iki sekme de aynı anda
+  /// ağaçta duruyor ve aynı ürünü gösterebiliyor.
+  static const String _heroOneki = 'favori';
+
   @override
   Widget build(BuildContext context) {
     final saglayici = context.watch<FavoriProvider>();
@@ -55,8 +59,12 @@ class FavorilerEkrani extends StatelessWidget {
 
           return UrunKarti(
             urun: urun,
+            heroOneki: _heroOneki,
             onTap: () => Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => UrunDetayEkrani(urun: urun)),
+              MaterialPageRoute(
+                builder: (_) =>
+                    UrunDetayEkrani(urun: urun, heroOneki: _heroOneki),
+              ),
             ),
           );
         },

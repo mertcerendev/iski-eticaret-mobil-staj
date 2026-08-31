@@ -1,30 +1,36 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 import '../core/constants/api_constants.dart';
-import '../core/network/api_client.dart';
 import '../models/urun.dart';
-import '../services/sepet_service.dart';
+import '../providers/sepet_provider.dart';
+import '../widgets/adet_secici.dart';
 import '../widgets/favori_dugmesi.dart';
 
 class UrunDetayEkrani extends StatefulWidget {
   final Urun urun;
 
-  const UrunDetayEkrani({super.key, required this.urun});
+  /// Geçiş animasyonunun eşleşeceği kartın sekmesi. Karttaki etiketle
+  /// birebir aynı olmak zorunda, yoksa görsel büyüyerek gelmez.
+  final String heroOneki;
+
+  const UrunDetayEkrani({
+    super.key,
+    required this.urun,
+    required this.heroOneki,
+  });
 
   @override
   State<UrunDetayEkrani> createState() => _UrunDetayEkraniDurumu();
 }
 
 class _UrunDetayEkraniDurumu extends State<UrunDetayEkrani> {
-  final SepetServisi _sepetServisi = SepetServisi();
-
   /// Sunucu bir üründen en fazla 20 adet alınmasına izin veriyor. Aynı sınır
   /// burada da uygulanır ki kullanıcı reddedilecek bir istek göndermesin.
   static const int _enFazlaAdet = 20;
 
   int _adet = 1;
-  bool _ekleniyor = false;
 
   Urun get _urun => widget.urun;
 
@@ -32,20 +38,16 @@ class _UrunDetayEkraniDurumu extends State<UrunDetayEkrani> {
   int get _adetTavani =>
       _urun.stok < _enFazlaAdet ? _urun.stok : _enFazlaAdet;
 
+  /// Ekleme isteği doğrudan servise değil sağlayıcıya gidiyor. Sağlayıcı
+  /// sunucudan dönen yeni sepeti sakladığı için alt gezinmedeki rozet
+  /// aynı anda güncelleniyor; ekranın rozeti ayrıca haberdar etmesi gerekmiyor.
   Future<void> _sepeteEkle() async {
-    setState(() => _ekleniyor = true);
-
-    String? hata;
-
-    try {
-      await _sepetServisi.ekle(urunId: _urun.id, adet: _adet);
-    } catch (yakalanan) {
-      hata = hataMesaji(yakalanan);
-    }
+    final hata = await context.read<SepetProvider>().ekle(
+      urunId: _urun.id,
+      adet: _adet,
+    );
 
     if (!mounted) return;
-
-    setState(() => _ekleniyor = false);
 
     final mesajci = ScaffoldMessenger.of(context);
     mesajci.hideCurrentSnackBar();
@@ -53,8 +55,9 @@ class _UrunDetayEkraniDurumu extends State<UrunDetayEkrani> {
     mesajci.showSnackBar(
       SnackBar(
         content: Text(hata ?? '$_adet adet sepete eklendi.'),
-        backgroundColor:
-            hata == null ? Colors.green.shade700 : Theme.of(context).colorScheme.error,
+        backgroundColor: hata == null
+            ? Colors.green.shade700
+            : Theme.of(context).colorScheme.error,
       ),
     );
   }
@@ -62,6 +65,10 @@ class _UrunDetayEkraniDurumu extends State<UrunDetayEkrani> {
   @override
   Widget build(BuildContext context) {
     final tema = Theme.of(context);
+
+    final ekleniyor = context.select<SepetProvider, bool>(
+      (saglayici) => saglayici.islemdeMi(_urun.id),
+    );
 
     return Scaffold(
       appBar: AppBar(
@@ -79,7 +86,7 @@ class _UrunDetayEkraniDurumu extends State<UrunDetayEkrani> {
           // animasyonu kurar: karttaki görsel büyüyerek detay görselinin
           // yerine oturur. Etiket ürün kimliğiyle benzersizleştirilir.
           Hero(
-            tag: 'urun-gorsel-${_urun.id}',
+            tag: '${widget.heroOneki}-urun-gorsel-${_urun.id}',
             child: AspectRatio(
               aspectRatio: 1,
               child: _DetayGorseli(adres: _urun.gorselUrl),
@@ -142,10 +149,19 @@ class _UrunDetayEkraniDurumu extends State<UrunDetayEkrani> {
                 const SizedBox(height: 28),
 
                 if (_urun.stoktaVar) ...[
-                  _AdetSecici(
-                    adet: _adet,
-                    tavan: _adetTavani,
-                    onDegisti: (yeni) => setState(() => _adet = yeni),
+                  Row(
+                    children: [
+                      const Text(
+                        'Adet',
+                        style: TextStyle(fontWeight: FontWeight.w600),
+                      ),
+                      const Spacer(),
+                      AdetSecici(
+                        adet: _adet,
+                        tavan: _adetTavani,
+                        onDegisti: (yeni) => setState(() => _adet = yeni),
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 16),
                 ],
@@ -154,8 +170,8 @@ class _UrunDetayEkraniDurumu extends State<UrunDetayEkrani> {
                   // Stok yoksa buton pasif. Nedeni hemen altında yazıyor ki
                   // kullanıcı butonun neden çalışmadığını anlasın.
                   onPressed:
-                      (!_urun.stoktaVar || _ekleniyor) ? null : _sepeteEkle,
-                  icon: _ekleniyor
+                      (!_urun.stoktaVar || ekleniyor) ? null : _sepeteEkle,
+                  icon: ekleniyor
                       ? const SizedBox(
                           width: 20,
                           height: 20,
@@ -241,58 +257,6 @@ class _StokDurumu extends StatelessWidget {
         Text(
           urun.stokMetni,
           style: TextStyle(color: renk, fontWeight: FontWeight.w600),
-        ),
-      ],
-    );
-  }
-}
-
-/// Eksi/artı düğmeleriyle adet seçimi. Sınırlar dışına çıkan düğme pasifleşir.
-class _AdetSecici extends StatelessWidget {
-  final int adet;
-  final int tavan;
-  final ValueChanged<int> onDegisti;
-
-  const _AdetSecici({
-    required this.adet,
-    required this.tavan,
-    required this.onDegisti,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        const Text('Adet', style: TextStyle(fontWeight: FontWeight.w600)),
-        const Spacer(),
-        Container(
-          decoration: BoxDecoration(
-            border: Border.all(color: Colors.grey.shade300),
-            borderRadius: BorderRadius.circular(10),
-          ),
-          child: Row(
-            children: [
-              IconButton(
-                icon: const Icon(Icons.remove),
-                onPressed: adet > 1 ? () => onDegisti(adet - 1) : null,
-              ),
-              SizedBox(
-                width: 36,
-                child: Text(
-                  '$adet',
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
-              IconButton(
-                icon: const Icon(Icons.add),
-                onPressed: adet < tavan ? () => onDegisti(adet + 1) : null,
-              ),
-            ],
-          ),
         ),
       ],
     );

@@ -4,8 +4,9 @@ import 'package:provider/provider.dart';
 import 'core/theme/app_theme.dart';
 import 'providers/auth_provider.dart';
 import 'providers/favori_provider.dart';
+import 'providers/sepet_provider.dart';
 import 'providers/urun_provider.dart';
-import 'screens/ana_ekran.dart';
+import 'screens/ana_kabuk.dart';
 import 'screens/giris_ekrani.dart';
 
 void main() {
@@ -28,6 +29,7 @@ class UygulamaKoku extends StatelessWidget {
         // ancak ana ekran açıldığında atar.
         ChangeNotifierProvider(create: (_) => UrunProvider()),
         ChangeNotifierProvider(create: (_) => FavoriProvider()),
+        ChangeNotifierProvider(create: (_) => SepetProvider()),
       ],
       child: MaterialApp(
         title: 'İSKİ E-Ticaret',
@@ -59,7 +61,7 @@ class OturumKapisi extends StatelessWidget {
         return const GirisEkrani();
 
       case OturumDurumu.girisYapildi:
-        return const AnaEkran();
+        return const AnaKabuk();
     }
   }
 }
