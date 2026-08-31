@@ -272,10 +272,29 @@ Tek uç, aç-kapa mantığı. Ayrı ekleme ve çıkarma uçları yazılsaydı is
 ### POST /api/orders
 
 ```json
-{ "addressText": "Guzeltepe Mahallesi, Osmanpasa Caddesi No 7, Eyupsultan/Istanbul" }
+{
+  "addressText": "Guzeltepe Mahallesi, Osmanpasa Caddesi No 7, Eyupsultan/Istanbul",
+  "cardNumber": "4242424242424242",
+  "cardExpiry": "12/28",
+  "cardCvv": "123",
+  "cardHolderName": "MERT CEREN"
+}
 ```
 
 Adres 10–500 karakter. Sepet boşsa **400**.
+
+**Ödeme simülasyonu.** Gerçek bir kurulumda kart bilgisi bu sunucuya hiç uğramaz; uygulama kartı doğrudan ödeme kuruluşuna gönderir ve bize yalnızca bir jeton döner. Burada ödeme kuruluşu olmadığı için taklit edilmektedir.
+
+| Alan | Kural | Saklanır mı? |
+|---|---|---|
+| `cardNumber` | 16 hane + Luhn kontrol hanesi | **Hayır** — yalnızca son 4 hane `cardLast4`'e yazılır |
+| `cardExpiry` | `AA/YY`, geçmiş tarih reddedilir | **Hayır** |
+| `cardCvv` | 3 hane | **Hayır** |
+| `cardHolderName` | 3–100 karakter | Evet — `cardHolderName` |
+
+Kart bilgisi **işlem başlamadan** doğrulanır; sonraya bırakılsaydı hatalı bir kart yüzünden stok düşülüp geri alınması gerekirdi. Luhn denetimi sahteciliği değil **yazım hatasını** yakalar: tek hane yanlış girildiğinde ya da iki hane yer değiştirdiğinde tutmaz.
+
+Sipariş doğrudan `PAID` durumunda açılır — ödeme taklit edildiği ve her zaman başarılı sayıldığı için. Gerçek kurulumda `PENDING` açılır, kuruluşun onayı gelince `PAID`'e geçerdi.
 
 **Tek bir transaction içinde dört iş yapılır:**
 

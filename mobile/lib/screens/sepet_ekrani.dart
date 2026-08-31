@@ -7,6 +7,7 @@ import '../models/sepet.dart';
 import '../providers/sepet_provider.dart';
 import '../widgets/adet_secici.dart';
 import '../widgets/durum_gorunumleri.dart';
+import 'odeme_ekrani.dart';
 
 class SepetEkrani extends StatelessWidget {
   const SepetEkrani({super.key});
@@ -343,40 +344,76 @@ class _ToplamSeridi extends StatelessWidget {
 
   const _ToplamSeridi({required this.sepet});
 
+  /// Alınamayan satırlar (stoğu tükenmiş ya da satıştan kaldırılmış) siparişi
+  /// tümden engeller: sunucu böyle bir satır görünce işlemi geri alıyor.
+  /// Kullanıcı bunu ödeme formunu doldurduktan sonra değil, burada öğrenmeli.
+  bool get _siparisVerilebilir =>
+      sepet.satirlar.every((satir) => satir.satinAlinabilir);
+
   @override
   Widget build(BuildContext context) {
-    // Sipariş verme adımı Gün 12'de eklenecek; şimdilik yalnız tutar yazıyor.
     return Material(
       elevation: 8,
       color: Colors.white,
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(20, 14, 20, 14),
-        child: Row(
+        padding: const EdgeInsets.fromLTRB(20, 12, 20, 12),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
+            Row(
               children: [
-                Text(
-                  '${sepet.satirlar.length} üründe ${sepet.toplamAdet} adet',
-                  style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '${sepet.satirlar.length} üründe ${sepet.toplamAdet} adet',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey.shade600,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    const Text(
+                      'Toplam',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 2),
-                const Text(
-                  'Toplam',
-                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+                const Spacer(),
+                Text(
+                  sepet.toplamMetni,
+                  style: TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
                 ),
               ],
             ),
-            const Spacer(),
-            Text(
-              sepet.toplamMetni,
-              style: TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.bold,
-                color: Theme.of(context).colorScheme.primary,
-              ),
+            const SizedBox(height: 10),
+
+            FilledButton.icon(
+              onPressed: _siparisVerilebilir
+                  ? () => Navigator.of(context).push(
+                        MaterialPageRoute(builder: (_) => const OdemeEkrani()),
+                      )
+                  : null,
+              icon: const Icon(Icons.shopping_bag_outlined),
+              label: const Text('Siparişi Tamamla'),
             ),
+
+            if (!_siparisVerilebilir) ...[
+              const SizedBox(height: 8),
+              Text(
+                'Alınamayan ürünleri sepetten çıkarmadan sipariş verilemez.',
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+              ),
+            ],
           ],
         ),
       ),

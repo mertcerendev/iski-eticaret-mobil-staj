@@ -52,4 +52,93 @@ class Dogrulayicilar {
 
     return null;
   }
+
+  // ── Sipariş ve ödeme alanları ──────────────────────────────────────
+  // Buradaki kurallar da sunucudaki `order.service.js` ile birebir aynı.
+
+  static String? adres(String? deger) {
+    final metin = deger?.trim() ?? '';
+
+    if (metin.isEmpty) return 'Teslimat adresi zorunludur.';
+    if (metin.length < 10) return 'Adres en az 10 karakter olmalıdır.';
+    if (metin.length > 500) return 'Adres en fazla 500 karakter olabilir.';
+
+    return null;
+  }
+
+  /// Kart numarasının son hanesi, önceki hanelerden üretilen bir kontrol
+  /// hanesidir (Luhn). Bu denetim sahteciliği değil **yazım hatasını**
+  /// yakalar: tek hane yanlış girildiğinde ya da iki hane yer değiştirdiğinde
+  /// tutmaz. Kullanıcı hatayı sunucuya gitmeden görür.
+  static bool luhnGecerli(String rakamlar) {
+    var toplam = 0;
+
+    for (var i = 0; i < rakamlar.length; i++) {
+      var hane = int.parse(rakamlar[rakamlar.length - 1 - i]);
+
+      if (i.isOdd) {
+        hane *= 2;
+        if (hane > 9) hane -= 9;
+      }
+
+      toplam += hane;
+    }
+
+    return toplam % 10 == 0;
+  }
+
+  static String? kartNumarasi(String? deger) {
+    // Ekranda 4'erli gruplar hâlinde gösterildiği için boşluklar atılır.
+    final rakamlar = (deger ?? '').replaceAll(RegExp(r'[\s-]'), '');
+
+    if (rakamlar.isEmpty) return 'Kart numarası zorunludur.';
+    if (!RegExp(r'^\d{16}$').hasMatch(rakamlar)) {
+      return 'Kart numarası 16 haneli olmalıdır.';
+    }
+    if (!luhnGecerli(rakamlar)) return 'Kart numarası geçersiz.';
+
+    return null;
+  }
+
+  static String? sonKullanma(String? deger) {
+    final metin = deger?.trim() ?? '';
+
+    if (metin.isEmpty) return 'Son kullanma tarihi zorunludur.';
+
+    final eslesme = RegExp(r'^(0[1-9]|1[0-2])/(\d{2})$').firstMatch(metin);
+
+    if (eslesme == null) return 'AA/YY biçiminde giriniz.';
+
+    final ay = int.parse(eslesme.group(1)!);
+    final yil = 2000 + int.parse(eslesme.group(2)!);
+
+    // Kart, son kullanma ayının son gününe kadar geçerlidir; bu yüzden
+    // bir sonraki ayın ilk günüyle karşılaştırılır.
+    if (!DateTime(yil, ay + 1, 1).isAfter(DateTime.now())) {
+      return 'Kartın son kullanma tarihi geçmiş.';
+    }
+
+    return null;
+  }
+
+  static String? cvv(String? deger) {
+    final metin = deger?.trim() ?? '';
+
+    if (metin.isEmpty) return 'Güvenlik kodu zorunludur.';
+    if (!RegExp(r'^\d{3}$').hasMatch(metin)) {
+      return 'Güvenlik kodu 3 haneli olmalıdır.';
+    }
+
+    return null;
+  }
+
+  static String? kartSahibi(String? deger) {
+    final metin = deger?.trim() ?? '';
+
+    if (metin.isEmpty) return 'Kart üzerindeki ad zorunludur.';
+    if (metin.length < 3) return 'Ad en az 3 karakter olmalıdır.';
+    if (metin.length > 100) return 'Ad en fazla 100 karakter olabilir.';
+
+    return null;
+  }
 }

@@ -3,9 +3,11 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 
 import 'package:mobile/core/dogrulayicilar.dart';
+import 'package:mobile/core/kart_bicimlendiriciler.dart';
 import 'package:mobile/models/kategori.dart';
 import 'package:mobile/models/sayfali_sonuc.dart';
 import 'package:mobile/models/sepet.dart';
+import 'package:mobile/models/siparis.dart';
 import 'package:mobile/models/urun.dart';
 import 'package:mobile/providers/favori_provider.dart';
 import 'package:mobile/widgets/urun_karti.dart';
@@ -216,6 +218,170 @@ void main() {
       expect(sepet.bosMu, isTrue);
       expect(sepet.toplamAdet, 0);
       expect(sepet.toplamMetni, '0.00 TL');
+    });
+  });
+
+  group('Siparis.fromJson', () {
+    final siparis = Siparis.fromJson({
+      'id': 3,
+      'userId': 1,
+      'status': 'PAID',
+      'totalAmount': '31499.70',
+      'addressText': 'Guzeltepe Mahallesi, Osmanpasa Caddesi No 7',
+      'cardLast4': '4242',
+      'cardHolderName': 'MERT CEREN',
+      'createdAt': '2026-09-01T09:30:00.000Z',
+      'items': [
+        {
+          'id': 5,
+          'productId': 1,
+          'quantity': 3,
+          'unitPrice': '1999.9',
+          'product': {'id': 1, 'name': 'Kablosuz Kulaklik', 'imageUrl': null},
+        },
+        {
+          'id': 6,
+          'productId': 9,
+          'quantity': 2,
+          'unitPrice': '12750',
+          'product': {'id': 9, 'name': 'Koşu Bandı', 'imageUrl': null},
+        },
+      ],
+    });
+
+    test('durum, tutar ve kalemler çözülür', () {
+      expect(siparis.durum, SiparisDurumu.odendi);
+      expect(siparis.durum.etiket, 'Ödendi');
+      expect(siparis.toplamTutar, 31499.70);
+      expect(siparis.kalemler, hasLength(2));
+      expect(siparis.toplamAdet, 5);
+    });
+
+    test('birim fiyat sipariş anındaki fiyattır, ara toplam ondan hesaplanır', () {
+      final kalem = siparis.kalemler.first;
+
+      expect(kalem.birimFiyat, 1999.9);
+      expect(kalem.araToplam, closeTo(5999.7, 0.001));
+    });
+
+    test('kartın yalnız son dört hanesi taşınır', () {
+      expect(siparis.kartSonDort, '4242');
+      expect(siparis.kartMetni, '**** **** **** 4242');
+    });
+
+    test('sipariş numarası okunur biçimde üretilir', () {
+      expect(siparis.numara, 'SP-000003');
+    });
+
+    test('tanınmayan durum uygulamayı çökertmez', () {
+      final bilinmeyen = Siparis.fromJson({
+        'id': 1,
+        'status': 'REFUNDED',
+        'totalAmount': '10',
+        'addressText': '',
+        'createdAt': '2026-09-01T09:30:00.000Z',
+        'items': [],
+      });
+
+      expect(bilinmeyen.durum, SiparisDurumu.bekliyor);
+    });
+  });
+
+  group('Dogrulayicilar - ödeme', () {
+    test('Luhn kontrol hanesi tutmayan numara reddedilir', () {
+      expect(Dogrulayicilar.kartNumarasi('4242 4242 4242 4242'), isNull);
+      expect(Dogrulayicilar.kartNumarasi('4242 4242 4242 4241'), isNotNull);
+    });
+
+    test('16 haneden kısa numara reddedilir', () {
+      expect(Dogrulayicilar.kartNumarasi('4242 4242'), isNotNull);
+      expect(Dogrulayicilar.kartNumarasi(''), isNotNull);
+    });
+
+    test('son kullanma biçimi ve geçmiş tarih denetlenir', () {
+      expect(Dogrulayicilar.sonKullanma('1228'), isNotNull);
+      expect(Dogrulayicilar.sonKullanma('13/28'), isNotNull);
+      expect(Dogrulayicilar.sonKullanma('01/24'), isNotNull);
+      expect(Dogrulayicilar.sonKullanma('12/99'), isNull);
+    });
+
+    test('cvv 3 hane olmalıdır', () {
+      expect(Dogrulayicilar.cvv('12'), isNotNull);
+      expect(Dogrulayicilar.cvv('1234'), isNotNull);
+      expect(Dogrulayicilar.cvv('123'), isNull);
+    });
+
+    test('adres en az 10 karakter olmalıdır', () {
+      expect(Dogrulayicilar.adres('Kadikoy'), isNotNull);
+      expect(Dogrulayicilar.adres('Güzeltepe Mahallesi No 7'), isNull);
+    });
+  });
+
+  group('KartNumarasiBicimi', () {
+    TextEditingValue yaz(String metin, int imlec) => TextEditingValue(
+      text: metin,
+      selection: TextSelection.collapsed(offset: imlec),
+    );
+
+    test('16 hane dörderli gruplanır', () {
+      final sonuc = KartNumarasiBicimi()
+          .formatEditUpdate(TextEditingValue.empty, yaz('4242424242424242', 16));
+
+      expect(sonuc.text, '4242 4242 4242 4242');
+      expect(sonuc.selection.baseOffset, 19);
+    });
+
+    // Öykünücüde bulunan hata: alanın ortasındaki bir hane düzeltilmek
+    // istendiğinde imleç metnin sonuna atılıyor, yazılan rakam sona
+    // ekleniyor ve numara karışıyordu. İmleç, önünde kaç rakam varsa yine
+    // o kadar rakamın arkasında kalmalı.
+    //
+    // Beklenen konum 15 değil 14: imleç ayracın ÖNÜNDE kalır. Ayracın
+    // arkasına geçseydi, bir sonraki geri tuşu rakamı değil boşluğu silerdi;
+    // boşluk da hemen yeniden üretildiği için geri tuşu ölü görünürdü.
+    test('ortadaki hane silinince imleç yerinde kalır, sona atlamaz', () {
+      final sonuc = KartNumarasiBicimi().formatEditUpdate(
+        yaz('4242 4242 4242 4241', 16),
+        yaz('4242 4242 4242 241', 15),
+      );
+
+      expect(sonuc.text, '4242 4242 4242 241');
+      expect(sonuc.selection.baseOffset, 14);
+      expect(sonuc.selection.baseOffset, isNot(sonuc.text.length));
+    });
+
+    test('boşluklar kullanıcıdan gelse bile yeniden üretilir', () {
+      final sonuc = KartNumarasiBicimi()
+          .formatEditUpdate(TextEditingValue.empty, yaz('42 4242', 7));
+
+      expect(sonuc.text, '4242 42');
+    });
+  });
+
+  group('SonKullanmaBicimi', () {
+    test('iki haneden sonra bölü işareti konur', () {
+      final sonuc = SonKullanmaBicimi().formatEditUpdate(
+        TextEditingValue.empty,
+        const TextEditingValue(
+          text: '1228',
+          selection: TextSelection.collapsed(offset: 4),
+        ),
+      );
+
+      expect(sonuc.text, '12/28');
+      expect(sonuc.selection.baseOffset, 5);
+    });
+
+    test('tek hane girildiğinde bölü eklenmez', () {
+      final sonuc = SonKullanmaBicimi().formatEditUpdate(
+        TextEditingValue.empty,
+        const TextEditingValue(
+          text: '1',
+          selection: TextSelection.collapsed(offset: 1),
+        ),
+      );
+
+      expect(sonuc.text, '1');
     });
   });
 }
