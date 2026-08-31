@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../core/bildirim.dart';
 import '../models/urun.dart';
 import '../providers/favori_provider.dart';
 
@@ -15,19 +16,15 @@ class FavoriDugmesi extends StatelessWidget {
   const FavoriDugmesi({super.key, required this.urun, this.renk});
 
   Future<void> _degistir(BuildContext context) async {
-    final mesajci = ScaffoldMessenger.of(context);
-    final tema = Theme.of(context);
+    // Bu bir StatelessWidget; `mounted` denetimi yok, bu yüzden bildirim
+    // aracı `await`ten ÖNCE hazırlanıyor.
+    final bildir = Bildirim(context);
 
     final hata = await context.read<FavoriProvider>().degistir(urun);
 
-    if (hata == null) return;
-
-    // İstek başarısız oldu; sağlayıcı kalbi eski hâline döndürdü, kullanıcıya
-    // nedenini söylemek kalıyor.
-    mesajci.hideCurrentSnackBar();
-    mesajci.showSnackBar(
-      SnackBar(content: Text(hata), backgroundColor: tema.colorScheme.error),
-    );
+    // İstek başarısız olduysa sağlayıcı kalbi eski hâline döndürdü;
+    // kullanıcıya nedenini söylemek kalıyor.
+    if (hata != null) bildir.hata(hata);
   }
 
   @override

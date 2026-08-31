@@ -1,9 +1,8 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
-import '../core/constants/api_constants.dart';
 import '../models/urun.dart';
 import 'favori_dugmesi.dart';
+import 'urun_gorseli.dart';
 
 /// Izgarada tek bir ürünü gösteren kart.
 ///
@@ -48,7 +47,7 @@ class UrunKarti extends StatelessWidget {
                   tag: '$heroOneki-urun-gorsel-${urun.id}',
                   child: AspectRatio(
                     aspectRatio: 1,
-                    child: _Gorsel(adres: urun.gorselUrl),
+                    child: UrunGorseli(adres: urun.gorselUrl),
                   ),
                 ),
 
@@ -122,51 +121,6 @@ class UrunKarti extends StatelessWidget {
             ),
           ],
         ),
-      ),
-    );
-  }
-}
-
-/// Ürün görselini gösterir; adres yoksa ya da yüklenemezse yer tutucu çizer.
-class _Gorsel extends StatelessWidget {
-  final String? adres;
-
-  const _Gorsel({required this.adres});
-
-  @override
-  Widget build(BuildContext context) {
-    final tamAdres = ApiSabitleri.tamGorselAdresi(adres);
-
-    if (tamAdres.isEmpty) return const _YerTutucu();
-
-    // cached_network_image bir kez indirdiği görseli saklar; listede
-    // yukarı aşağı kaydırıldığında aynı görsel tekrar indirilmez.
-    return CachedNetworkImage(
-      imageUrl: tamAdres,
-      fit: BoxFit.cover,
-      placeholder: (_, _) => const _YerTutucu(yukleniyor: true),
-      errorWidget: (_, _, _) => const _YerTutucu(),
-    );
-  }
-}
-
-class _YerTutucu extends StatelessWidget {
-  final bool yukleniyor;
-
-  const _YerTutucu({this.yukleniyor = false});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      color: Colors.grey.shade200,
-      child: Center(
-        child: yukleniyor
-            ? const SizedBox(
-                width: 22,
-                height: 22,
-                child: CircularProgressIndicator(strokeWidth: 2),
-              )
-            : Icon(Icons.image_outlined, color: Colors.grey.shade400, size: 32),
       ),
     );
   }

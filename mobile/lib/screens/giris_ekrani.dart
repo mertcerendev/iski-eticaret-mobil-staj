@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../core/bildirim.dart';
+
 import '../core/dogrulayicilar.dart';
 import '../providers/auth_provider.dart';
 import 'kayit_ekrani.dart';
@@ -44,12 +46,7 @@ class _GirisEkraniDurumu extends State<GirisEkrani> {
     if (!mounted) return;
 
     if (!basarili) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(saglayici.hata ?? 'Giriş yapılamadı.'),
-          backgroundColor: Theme.of(context).colorScheme.error,
-        ),
-      );
+      Bildirim(context).hata(saglayici.hata ?? 'Giriş yapılamadı.');
     }
 
     // Başarılıysa yönlendirme yapılmaz: oturum durumu değişince

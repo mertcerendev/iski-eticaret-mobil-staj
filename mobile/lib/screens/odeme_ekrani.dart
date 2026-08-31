@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
+import '../core/bildirim.dart';
 import '../core/dogrulayicilar.dart';
 import '../core/kart_bicimlendiriciler.dart';
 import '../providers/sepet_provider.dart';
@@ -62,14 +63,7 @@ class _OdemeEkraniDurumu extends State<OdemeEkrani> {
     if (!mounted) return;
 
     if (!sonuc.basarili) {
-      ScaffoldMessenger.of(context)
-        ..hideCurrentSnackBar()
-        ..showSnackBar(
-          SnackBar(
-            content: Text(sonuc.hata!),
-            backgroundColor: Theme.of(context).colorScheme.error,
-          ),
-        );
+      Bildirim(context).hata(sonuc.hata!);
       return;
     }
 

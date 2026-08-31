@@ -1,12 +1,12 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../core/constants/api_constants.dart';
+import '../core/bildirim.dart';
 import '../models/urun.dart';
 import '../providers/sepet_provider.dart';
 import '../widgets/adet_secici.dart';
 import '../widgets/favori_dugmesi.dart';
+import '../widgets/urun_gorseli.dart';
 
 class UrunDetayEkrani extends StatefulWidget {
   final Urun urun;
@@ -49,17 +49,7 @@ class _UrunDetayEkraniDurumu extends State<UrunDetayEkrani> {
 
     if (!mounted) return;
 
-    final mesajci = ScaffoldMessenger.of(context);
-    mesajci.hideCurrentSnackBar();
-
-    mesajci.showSnackBar(
-      SnackBar(
-        content: Text(hata ?? '$_adet adet sepete eklendi.'),
-        backgroundColor: hata == null
-            ? Colors.green.shade700
-            : Theme.of(context).colorScheme.error,
-      ),
-    );
+    Bildirim(context).sonuc(hata, '$_adet adet sepete eklendi.');
   }
 
   @override
@@ -89,7 +79,7 @@ class _UrunDetayEkraniDurumu extends State<UrunDetayEkrani> {
             tag: '${widget.heroOneki}-urun-gorsel-${_urun.id}',
             child: AspectRatio(
               aspectRatio: 1,
-              child: _DetayGorseli(adres: _urun.gorselUrl),
+              child: UrunGorseli(adres: _urun.gorselUrl, simgeBoyutu: 64),
             ),
           ),
 
@@ -197,38 +187,6 @@ class _UrunDetayEkraniDurumu extends State<UrunDetayEkrani> {
           ),
         ],
       ),
-    );
-  }
-}
-
-class _DetayGorseli extends StatelessWidget {
-  final String? adres;
-
-  const _DetayGorseli({required this.adres});
-
-  @override
-  Widget build(BuildContext context) {
-    final tamAdres = ApiSabitleri.tamGorselAdresi(adres);
-
-    Widget yerTutucu() => Container(
-          color: Colors.grey.shade200,
-          child: Icon(
-            Icons.image_outlined,
-            size: 64,
-            color: Colors.grey.shade400,
-          ),
-        );
-
-    if (tamAdres.isEmpty) return yerTutucu();
-
-    return CachedNetworkImage(
-      imageUrl: tamAdres,
-      fit: BoxFit.cover,
-      placeholder: (_, _) => Container(
-        color: Colors.grey.shade200,
-        child: const Center(child: CircularProgressIndicator()),
-      ),
-      errorWidget: (_, _, _) => yerTutucu(),
     );
   }
 }

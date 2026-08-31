@@ -1,12 +1,12 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../core/constants/api_constants.dart';
+import '../core/bildirim.dart';
 import '../models/sepet.dart';
 import '../providers/sepet_provider.dart';
 import '../widgets/adet_secici.dart';
 import '../widgets/durum_gorunumleri.dart';
+import '../widgets/urun_gorseli.dart';
 import 'odeme_ekrani.dart';
 
 class SepetEkrani extends StatelessWidget {
@@ -102,26 +102,12 @@ class SepetEkrani extends StatelessWidget {
     if (!context.mounted) return false;
 
     if (hata != null) {
-      _uyariGoster(context, hata, basarili: false);
+      Bildirim(context).hata(hata);
       return false;
     }
 
     return true;
   }
-}
-
-void _uyariGoster(BuildContext context, String mesaj, {required bool basarili}) {
-  final mesajci = ScaffoldMessenger.of(context);
-
-  mesajci.hideCurrentSnackBar();
-  mesajci.showSnackBar(
-    SnackBar(
-      content: Text(mesaj),
-      backgroundColor: basarili
-          ? Colors.green.shade700
-          : Theme.of(context).colorScheme.error,
-    ),
-  );
 }
 
 class _SepetSatiriKarti extends StatelessWidget {
@@ -156,7 +142,7 @@ class _SepetSatiriKarti extends StatelessWidget {
                   child: SizedBox(
                     width: 76,
                     height: 76,
-                    child: _SatirGorseli(adres: satir.urun.gorselUrl),
+                    child: UrunGorseli(adres: satir.urun.gorselUrl, simgeBoyutu: 24),
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -241,26 +227,22 @@ class _SepetSatiriKarti extends StatelessWidget {
   }
 
   Future<void> _adediDegistir(BuildContext context, int yeniAdet) async {
+    final bildir = Bildirim(context);
+
     final hata = await context.read<SepetProvider>().adetDegistir(
       urunId: satir.urunId,
       adet: yeniAdet,
     );
 
-    if (hata != null && context.mounted) {
-      _uyariGoster(context, hata, basarili: false);
-    }
+    if (hata != null) bildir.hata(hata);
   }
 
   Future<void> _cikar(BuildContext context) async {
+    final bildir = Bildirim(context);
+
     final hata = await context.read<SepetProvider>().cikar(satir.urunId);
 
-    if (!context.mounted) return;
-
-    _uyariGoster(
-      context,
-      hata ?? 'Ürün sepetten çıkarıldı.',
-      basarili: hata == null,
-    );
+    bildir.sonuc(hata, 'Ürün sepetten çıkarıldı.');
   }
 }
 
@@ -291,31 +273,6 @@ class _Uyari extends StatelessWidget {
           ),
         ],
       ),
-    );
-  }
-}
-
-class _SatirGorseli extends StatelessWidget {
-  final String? adres;
-
-  const _SatirGorseli({required this.adres});
-
-  @override
-  Widget build(BuildContext context) {
-    final tamAdres = ApiSabitleri.tamGorselAdresi(adres);
-
-    Widget yerTutucu() => Container(
-      color: Colors.grey.shade200,
-      child: Icon(Icons.image_outlined, color: Colors.grey.shade400),
-    );
-
-    if (tamAdres.isEmpty) return yerTutucu();
-
-    return CachedNetworkImage(
-      imageUrl: tamAdres,
-      fit: BoxFit.cover,
-      placeholder: (_, _) => Container(color: Colors.grey.shade200),
-      errorWidget: (_, _, _) => yerTutucu(),
     );
   }
 }

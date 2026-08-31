@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../core/bildirim.dart';
+
 import '../core/dogrulayicilar.dart';
 import '../providers/auth_provider.dart';
 
@@ -51,12 +53,7 @@ class _KayitEkraniDurumu extends State<KayitEkrani> {
       return;
     }
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(saglayici.hata ?? 'Kayıt yapılamadı.'),
-        backgroundColor: Theme.of(context).colorScheme.error,
-      ),
-    );
+    Bildirim(context).hata(saglayici.hata ?? 'Kayıt yapılamadı.');
   }
 
   @override
