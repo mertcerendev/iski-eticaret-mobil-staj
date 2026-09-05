@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../core/theme/app_theme.dart';
 import '../models/siparis.dart';
 import '../providers/siparis_provider.dart';
 import '../widgets/durum_gorunumleri.dart';
@@ -137,10 +138,10 @@ class _SiparisKarti extends StatelessWidget {
                   const Spacer(),
                   Text(
                     siparis.toplamMetni,
-                    style: TextStyle(
+                    style: const TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
-                      color: Theme.of(context).colorScheme.primary,
+                      color: UygulamaTemasi.vurgu,
                     ),
                   ),
                 ],

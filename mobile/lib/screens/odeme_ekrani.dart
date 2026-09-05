@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 import '../core/bildirim.dart';
+import '../core/theme/app_theme.dart';
 import '../core/dogrulayicilar.dart';
 import '../core/kart_bicimlendiriciler.dart';
 import '../providers/sepet_provider.dart';
@@ -253,10 +254,10 @@ class _OzetKarti extends StatelessWidget {
             const Spacer(),
             Text(
               toplamMetni,
-              style: TextStyle(
+              style: const TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
-                color: Theme.of(context).colorScheme.primary,
+                color: UygulamaTemasi.vurgu,
               ),
             ),
           ],

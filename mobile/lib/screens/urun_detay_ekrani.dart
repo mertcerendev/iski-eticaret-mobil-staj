@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../core/bildirim.dart';
+import '../core/theme/app_theme.dart';
 import '../models/urun.dart';
 import '../providers/auth_provider.dart';
 import '../providers/sepet_provider.dart';
@@ -114,8 +115,6 @@ class _UrunDetayEkraniDurumu extends State<UrunDetayEkrani> {
 
   @override
   Widget build(BuildContext context) {
-    final tema = Theme.of(context);
-
     final ekleniyor = context.select<SepetProvider, bool>(
       (saglayici) => saglayici.islemdeMi(_urun.id),
     );
@@ -185,10 +184,11 @@ class _UrunDetayEkraniDurumu extends State<UrunDetayEkrani> {
 
                 Text(
                   _urun.fiyatMetni,
-                  style: TextStyle(
-                    fontSize: 26,
+                  style: const TextStyle(
+                    fontSize: 27,
                     fontWeight: FontWeight.bold,
-                    color: tema.colorScheme.primary,
+                    color: UygulamaTemasi.vurgu,
+                    letterSpacing: -0.4,
                   ),
                 ),
                 const SizedBox(height: 12),

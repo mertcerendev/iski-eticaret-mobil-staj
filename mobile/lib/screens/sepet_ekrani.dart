@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../core/bildirim.dart';
+import '../core/theme/app_theme.dart';
 import '../models/sepet.dart';
 import '../providers/sepet_provider.dart';
 import '../widgets/adet_secici.dart';
@@ -172,10 +173,10 @@ class _SepetSatiriKarti extends StatelessWidget {
                       const SizedBox(height: 6),
                       Text(
                         satir.araToplamMetni,
-                        style: TextStyle(
+                        style: const TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
-                          color: Theme.of(context).colorScheme.primary,
+                          color: UygulamaTemasi.vurgu,
                         ),
                       ),
                     ],
@@ -343,10 +344,10 @@ class _ToplamSeridi extends StatelessWidget {
                 const Spacer(),
                 Text(
                   sepet.toplamMetni,
-                  style: TextStyle(
+                  style: const TextStyle(
                     fontSize: 22,
                     fontWeight: FontWeight.bold,
-                    color: Theme.of(context).colorScheme.primary,
+                    color: UygulamaTemasi.vurgu,
                   ),
                 ),
               ],
