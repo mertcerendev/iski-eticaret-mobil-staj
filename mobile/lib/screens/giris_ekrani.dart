@@ -79,7 +79,7 @@ class _GirisEkraniDurumu extends State<GirisEkrani> {
                   const SizedBox(height: 16),
 
                   Text(
-                    'İSKİ E-Ticaret',
+                    'Nuvia',
                     textAlign: TextAlign.center,
                     style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                           fontWeight: FontWeight.bold,
