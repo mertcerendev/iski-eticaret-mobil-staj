@@ -1,13 +1,33 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../core/theme/app_theme.dart';
+import '../models/kategori.dart';
+import '../models/urun.dart';
 import '../providers/auth_provider.dart';
 import '../providers/urun_provider.dart';
 import '../services/urun_service.dart';
 import '../widgets/durum_gorunumleri.dart';
+import '../widgets/iskelet.dart';
 import '../widgets/urun_karti.dart';
 import 'urun_detay_ekrani.dart';
 import 'urun_formu_ekrani.dart';
+
+/// Uygulamanın ana ekranı.
+///
+/// İki farklı kipte çalışıyor:
+///
+/// - **Keşif kipi** (arama ve süzgeç boşken): karşılama şeridi, kategori
+///   simgeleri, iki yatay ürün şeridi ve altında tüm ürünler ızgarası.
+/// - **Arama kipi** (arama yazıldığında ya da süzgeç seçildiğinde): keşif
+///   bölümleri gizlenip ekran tamamen sonuçlara ayrılıyor.
+///
+/// Ayrım bilinçli: kullanıcı bir şey ararken keşif içeriği sonuçları aşağı
+/// itip aramayı zorlaştırırdı.
+/// Yatay şeritteki kartın genişliği. Kare görselin kenarı da bu ölçüde.
+/// Hem şeridi hem kart genişliğini besliyor; iki yerde ayrı yazılsaydı
+/// biri değişince şerit yüksekliği kartla uyumsuz kalırdı.
+const double _seritKartGenisligi = 150;
 
 class AnaEkran extends StatefulWidget {
   const AnaEkran({super.key});
@@ -24,9 +44,9 @@ class _AnaEkraniDurumu extends State<AnaEkran> {
   /// aynı anda ağaçta olduğu için etiketler ayrışmak zorunda.
   static const String _heroOneki = 'liste';
 
-  /// Liste sonuna bu kadar piksel kala sonraki sayfa istenir. Kullanıcı
-  /// sona varmadan yükleme başlasın ki bekleme hissedilmesin.
+  /// Liste sonuna bu kadar piksel kala sonraki sayfa istenir.
   static const double _yuklemeEsigi = 400;
+
 
   @override
   void initState() {
@@ -35,8 +55,7 @@ class _AnaEkraniDurumu extends State<AnaEkran> {
     _kaydirmaDenetleyici.addListener(_kaydirmayiDinle);
 
     // `initState` içinde doğrudan istek atılamaz; ilk çizim bitmeden
-    // `notifyListeners()` çağrılırsa Flutter hata verir. Bu yüzden ilk
-    // kareden sonraya bırakılır.
+    // `notifyListeners()` çağrılırsa Flutter hata verir.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
 
@@ -59,16 +78,30 @@ class _AnaEkraniDurumu extends State<AnaEkran> {
     }
   }
 
+  /// Detay ekranını açar.
+  ///
+  /// [onek] parametresi şart: aynı ürün hem ızgarada hem keşif şeritlerinde
+  /// bulunabiliyor ve her biri farklı Hero etiketi taşıyor. Detay ekranına
+  /// hangi karttan gelindiyse o önek geçirilmezse etiketler tutmaz ve geçiş
+  /// animasyonu hiç oynamaz.
+  void _urunAc(Urun urun, String onek) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => UrunDetayEkrani(urun: urun, heroOneki: onek),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    final saglayici = context.watch<UrunProvider>();
+
     // Ekleme düğmesi yalnızca yöneticiye gösteriliyor. Bu bir görünüm
     // kolaylığı; asıl yetki denetimi sunucudaki `requireAdmin` katmanında.
     final yoneticiMi = context.watch<AuthProvider>().yoneticiMi;
 
     return Scaffold(
-      // Favorilere ve çıkışa artık alt gezinme çubuğundan gidiliyor;
-      // başlık çubuğunda simge kalmadı.
-      appBar: AppBar(title: const Text('Ürünler')),
+      appBar: AppBar(title: const Text('Nuvia')),
       floatingActionButton: yoneticiMi
           ? FloatingActionButton.extended(
               onPressed: () => Navigator.of(context).push(
@@ -78,159 +111,153 @@ class _AnaEkraniDurumu extends State<AnaEkran> {
               label: const Text('Yeni Ürün'),
             )
           : null,
-      body: Column(
-        children: [
-          const _KullaniciSeridi(),
-          _AramaKutusu(denetleyici: _aramaDenetleyici),
-          const _KategoriCipleri(),
-          const _SonucSatiri(),
-          Expanded(child: _icerik()),
-        ],
+      body: RefreshIndicator(
+        onRefresh: saglayici.yenidenYukle,
+        child: CustomScrollView(
+          controller: _kaydirmaDenetleyici,
+          slivers: [
+            SliverToBoxAdapter(
+              child: _AramaKutusu(denetleyici: _aramaDenetleyici),
+            ),
+
+            // ── Keşif bölümü ──────────────────────────────────────
+            if (saglayici.kesifGosterilsin) ...[
+              const SliverToBoxAdapter(child: _Afis()),
+              SliverToBoxAdapter(
+                child: _KategoriSeridi(
+                  kategoriler: saglayici.kategoriler,
+                  onSecildi: saglayici.kategoriSec,
+                ),
+              ),
+              SliverToBoxAdapter(
+                child: _UrunSeridi(
+                  baslik: 'Yeni Gelenler',
+                  simge: Icons.new_releases_outlined,
+                  urunler: saglayici.yeniUrunler,
+                  heroOneki: '$_heroOneki-yeni',
+                  onUrun: (urun) => _urunAc(urun, '$_heroOneki-yeni'),
+                ),
+              ),
+              SliverToBoxAdapter(
+                child: _UrunSeridi(
+                  baslik: 'Uygun Fiyatlılar',
+                  simge: Icons.local_offer_outlined,
+                  urunler: saglayici.uygunUrunler,
+                  heroOneki: '$_heroOneki-uygun',
+                  onUrun: (urun) => _urunAc(urun, '$_heroOneki-uygun'),
+                ),
+              ),
+            ] else
+              SliverToBoxAdapter(
+                child: _SuzgecCubugu(saglayici: saglayici),
+              ),
+
+            SliverToBoxAdapter(
+              child: _BolumBasligi(saglayici: saglayici),
+            ),
+
+            ..._icerikSliverlari(saglayici),
+          ],
+        ),
       ),
     );
   }
 
-  Widget _icerik() {
-    final saglayici = context.watch<UrunProvider>();
-
+  List<Widget> _icerikSliverlari(UrunProvider saglayici) {
     if (saglayici.ilkYuklemeSuruyor) {
-      return const YukleniyorGorunumu();
+      return const [SliverToBoxAdapter(child: IzgaraIskeleti())];
     }
 
     if (saglayici.hata != null) {
-      return HataGorunumu(
-        mesaj: saglayici.hata!,
-        onTekrarDene: saglayici.yenidenYukle,
-      );
+      return [
+        SliverToBoxAdapter(
+          child: SizedBox(
+            height: 320,
+            child: HataGorunumu(
+              mesaj: saglayici.hata!,
+              onTekrarDene: saglayici.yenidenYukle,
+            ),
+          ),
+        ),
+      ];
     }
 
     if (saglayici.bosMu) {
-      return BosGorunumu(
-        baslik: 'Ürün bulunamadı',
-        aciklama: saglayici.suzgecUygulandi
-            ? 'Arama ve filtrelerinizi değiştirmeyi deneyin.'
-            : 'Henüz ürün eklenmemiş.',
-        butonMetni: saglayici.suzgecUygulandi ? 'Filtreleri temizle' : null,
-        onButon: () {
-          _aramaDenetleyici.clear();
-          saglayici.suzgecleriTemizle();
-        },
-      );
+      return [
+        SliverToBoxAdapter(
+          child: SizedBox(
+            height: 320,
+            child: BosGorunumu(
+              baslik: 'Ürün bulunamadı',
+              aciklama: saglayici.suzgecUygulandi
+                  ? 'Arama ve filtrelerinizi değiştirmeyi deneyin.'
+                  : 'Henüz ürün eklenmemiş.',
+              butonMetni:
+                  saglayici.suzgecUygulandi ? 'Filtreleri temizle' : null,
+              onButon: () {
+                _aramaDenetleyici.clear();
+                saglayici.suzgecleriTemizle();
+              },
+            ),
+          ),
+        ),
+      ];
     }
 
-    return RefreshIndicator(
-      onRefresh: saglayici.yenidenYukle,
-      child: CustomScrollView(
-        controller: _kaydirmaDenetleyici,
-        slivers: [
-          SliverPadding(
-            padding: const EdgeInsets.fromLTRB(12, 12, 12, 4),
-            sliver: SliverGrid(
-              gridDelegate:
-                  const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2,
-                mainAxisSpacing: 12,
-                crossAxisSpacing: 12,
-                childAspectRatio: 0.62,
-              ),
-              delegate: SliverChildBuilderDelegate(
-                (context, sira) {
-                  final urun = saglayici.urunler[sira];
+    return [
+      SliverPadding(
+        padding: const EdgeInsets.fromLTRB(12, 4, 12, 4),
+        sliver: SliverGrid(
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 2,
+            mainAxisSpacing: 12,
+            crossAxisSpacing: 12,
+            // Kart yüksekliği = genişlik / oran. Ekran 411 dp genişliğinde,
+            // kart ≈ 187 dp; görsel 187 + metin 119 = 306 → oran ≈ 0.61.
+            childAspectRatio: 0.61,
+          ),
+          delegate: SliverChildBuilderDelegate(
+            (context, sira) {
+              final urun = saglayici.urunler[sira];
 
-                  return UrunKarti(
-                    urun: urun,
-                    heroOneki: _heroOneki,
-                    onTap: () => Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (_) => UrunDetayEkrani(
-                          urun: urun,
-                          heroOneki: _heroOneki,
+              return UrunKarti(
+                urun: urun,
+                heroOneki: _heroOneki,
+                onTap: () => _urunAc(urun, _heroOneki),
+              );
+            },
+            childCount: saglayici.urunler.length,
+          ),
+        ),
+      ),
+
+      SliverToBoxAdapter(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 20),
+          child: Center(
+            child: saglayici.dahaYukleniyor
+                ? const SizedBox(
+                    width: 24,
+                    height: 24,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : saglayici.dahaVarMi
+                    ? const SizedBox.shrink()
+                    : Text(
+                        'Tüm ürünler gösterildi',
+                        style: TextStyle(
+                          color: Colors.grey.shade500,
+                          fontSize: 13,
                         ),
                       ),
-                    ),
-                  );
-                },
-                childCount: saglayici.urunler.length,
-              ),
-            ),
           ),
-
-          // Sonraki sayfa yüklenirken listenin altında dönen halka.
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              child: Center(
-                child: saglayici.dahaYukleniyor
-                    ? const SizedBox(
-                        width: 24,
-                        height: 24,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : saglayici.dahaVarMi
-                        ? const SizedBox.shrink()
-                        : Text(
-                            'Tüm ürünler gösterildi',
-                            style: TextStyle(
-                              color: Colors.grey.shade500,
-                              fontSize: 13,
-                            ),
-                          ),
-              ),
-            ),
-          ),
-        ],
+        ),
       ),
-    );
+    ];
   }
 }
 
-/// Giriş yapan kullanıcıyı ve yönetici rozetini gösteren şerit.
-class _KullaniciSeridi extends StatelessWidget {
-  const _KullaniciSeridi();
-
-  @override
-  Widget build(BuildContext context) {
-    final saglayici = context.watch<AuthProvider>();
-    final kullanici = saglayici.kullanici;
-
-    if (kullanici == null) return const SizedBox.shrink();
-
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-      color: Theme.of(context).colorScheme.primaryContainer,
-      child: Row(
-        children: [
-          const Icon(Icons.person_outline, size: 18),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              'Hoş geldiniz, ${kullanici.adSoyad}',
-              style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 13),
-            ),
-          ),
-          if (saglayici.yoneticiMi)
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.primary,
-                borderRadius: BorderRadius.circular(6),
-              ),
-              child: const Text(
-                'YÖNETİCİ',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 10,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-        ],
-      ),
-    );
-  }
-}
-
+/// Arama kutusu.
 class _AramaKutusu extends StatelessWidget {
   final TextEditingController denetleyici;
 
@@ -241,7 +268,7 @@ class _AramaKutusu extends StatelessWidget {
     final saglayici = context.watch<UrunProvider>();
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(12, 12, 12, 0),
+      padding: const EdgeInsets.fromLTRB(12, 12, 12, 4),
       child: TextField(
         controller: denetleyici,
         textInputAction: TextInputAction.search,
@@ -251,7 +278,11 @@ class _AramaKutusu extends StatelessWidget {
         onChanged: saglayici.aramaDegisti,
 
         decoration: InputDecoration(
-          hintText: 'Ürün ara...',
+          // Sunucu yalnızca ürün ADINDA arıyor (`name contains`). İpucu
+          // "kategori veya marka" deseydi kullanıcı kategori adı yazıp boş
+          // sonuç alır ve aramanın bozuk olduğunu düşünürdü. Kategoriye göre
+          // süzme için altındaki çipler var.
+          hintText: 'Ürün adında ara',
           prefixIcon: const Icon(Icons.search),
           suffixIcon: saglayici.arama.isEmpty
               ? null
@@ -269,23 +300,218 @@ class _AramaKutusu extends StatelessWidget {
   }
 }
 
-/// Kategori filtresi ve sıralama menüsü.
-class _KategoriCipleri extends StatelessWidget {
-  const _KategoriCipleri();
+/// Karşılama afişi.
+///
+/// Kampanya ya da indirim yazmıyor: sunucuda böyle bir veri yok, uydurulmuş
+/// bir kampanya sunumda savunulamazdı. Afiş marka kimliğini taşıyor.
+class _Afis extends StatelessWidget {
+  const _Afis();
 
   @override
   Widget build(BuildContext context) {
-    final saglayici = context.watch<UrunProvider>();
+    final tema = Theme.of(context);
 
-    if (saglayici.kategoriler.isEmpty) return const SizedBox(height: 8);
+    return Container(
+      margin: const EdgeInsets.fromLTRB(12, 8, 12, 4),
+      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 18),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(14),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [tema.colorScheme.primary, const Color(0xFF2E6FBF)],
+        ),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Nuvia’ya hoş geldiniz',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 17,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Elektronikten spora altı kategoride ürün',
+                  style: TextStyle(
+                    color: Colors.white.withValues(alpha: 0.85),
+                    fontSize: 12.5,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const Icon(Icons.storefront, color: Colors.white24, size: 52),
+        ],
+      ),
+    );
+  }
+}
+
+/// Kategori simgeleri şeridi.
+class _KategoriSeridi extends StatelessWidget {
+  final List<Kategori> kategoriler;
+  final ValueChanged<int?> onSecildi;
+
+  const _KategoriSeridi({required this.kategoriler, required this.onSecildi});
+
+  /// Kategori adına göre simge. Sunucuda simge alanı yok; eşleme burada
+  /// yapılıyor, tanınmayan kategori genel bir simge alıyor.
+  static IconData _simge(String ad) {
+    switch (ad.toLowerCase()) {
+      case 'elektronik':
+        return Icons.devices_other;
+      case 'ev aletleri':
+        return Icons.kitchen_outlined;
+      case 'giyim':
+        return Icons.checkroom;
+      case 'kitap':
+        return Icons.menu_book_outlined;
+      case 'oyuncak':
+        return Icons.toys_outlined;
+      case 'spor':
+        return Icons.fitness_center;
+      default:
+        return Icons.category_outlined;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (kategoriler.isEmpty) return const SizedBox(height: 8);
+
+    final tema = Theme.of(context);
 
     return SizedBox(
-      height: 48,
+      height: 96,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.fromLTRB(12, 10, 12, 6),
+        itemCount: kategoriler.length,
+        separatorBuilder: (_, _) => const SizedBox(width: 14),
+        itemBuilder: (context, sira) {
+          final kategori = kategoriler[sira];
+
+          return SizedBox(
+            width: 66,
+            child: InkWell(
+              borderRadius: BorderRadius.circular(10),
+              onTap: () => onSecildi(kategori.id),
+              child: Column(
+                children: [
+                  Container(
+                    width: 52,
+                    height: 52,
+                    decoration: BoxDecoration(
+                      color: tema.colorScheme.primaryContainer,
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      _simge(kategori.ad),
+                      color: tema.colorScheme.onPrimaryContainer,
+                      size: 25,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    kategori.ad,
+                    maxLines: 2,
+                    textAlign: TextAlign.center,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(fontSize: 11, height: 1.15),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+}
+
+/// Başlıklı yatay ürün şeridi.
+class _UrunSeridi extends StatelessWidget {
+  final String baslik;
+  final IconData simge;
+  final List<Urun> urunler;
+  final String heroOneki;
+  final ValueChanged<Urun> onUrun;
+
+  const _UrunSeridi({
+    required this.baslik,
+    required this.simge,
+    required this.urunler,
+    required this.heroOneki,
+    required this.onUrun,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    if (urunler.isEmpty) return const SizedBox.shrink();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 14, 16, 8),
+          child: Row(
+            children: [
+              Icon(simge, size: 18, color: UygulamaTemasi.vurgu),
+              const SizedBox(width: 7),
+              Text(baslik, style: Theme.of(context).textTheme.titleMedium),
+            ],
+          ),
+        ),
+        SizedBox(
+          // Kare görsel (150) + kartın metin bölümü için gereken yükseklik.
+          // Elle sayı vermek yerine karttan okunuyor: kart tasarımı
+          // değişirse şerit de kendiliğinden uyum sağlıyor.
+          height: _seritKartGenisligi + UrunKarti.metinYuksekligi,
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            itemCount: urunler.length,
+            separatorBuilder: (_, _) => const SizedBox(width: 10),
+            itemBuilder: (context, sira) {
+              final urun = urunler[sira];
+
+              return UrunKarti(
+                urun: urun,
+                heroOneki: heroOneki,
+                genislik: _seritKartGenisligi,
+                onTap: () => onUrun(urun),
+              );
+            },
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// Arama kipinde görünen kategori ve sıralama çubuğu.
+class _SuzgecCubugu extends StatelessWidget {
+  final UrunProvider saglayici;
+
+  const _SuzgecCubugu({required this.saglayici});
+
+  @override
+  Widget build(BuildContext context) {
+    if (saglayici.kategoriler.isEmpty) return const SizedBox(height: 4);
+
+    return SizedBox(
+      height: 46,
       child: ListView(
         scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
         children: [
-          // "Tümü" seçeneği ayrı bir kategori değil, filtrenin kaldırılması.
           FilterChip(
             label: const Text('Tümü'),
             selected: saglayici.seciliKategoriId == null,
@@ -308,24 +534,37 @@ class _KategoriCipleri extends StatelessWidget {
   }
 }
 
-/// Kaç sonuç bulunduğunu ve sıralama seçeneğini gösteren satır.
-class _SonucSatiri extends StatelessWidget {
-  const _SonucSatiri();
+/// "Tüm Ürünler" başlığı, sonuç sayısı ve sıralama menüsü.
+class _BolumBasligi extends StatelessWidget {
+  final UrunProvider saglayici;
+
+  const _BolumBasligi({required this.saglayici});
 
   @override
   Widget build(BuildContext context) {
-    final saglayici = context.watch<UrunProvider>();
+    final aramaKipi = saglayici.suzgecUygulandi;
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 4, 8, 0),
+      padding: const EdgeInsets.fromLTRB(16, 14, 8, 4),
       child: Row(
         children: [
           Expanded(
-            child: Text(
-              saglayici.ilkYuklemeSuruyor
-                  ? ''
-                  : '${saglayici.toplam} ürün bulundu',
-              style: TextStyle(fontSize: 13, color: Colors.grey.shade600),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  aramaKipi ? 'Sonuçlar' : 'Tüm Ürünler',
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+                if (!saglayici.ilkYuklemeSuruyor)
+                  Text(
+                    '${saglayici.toplam} ürün',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.grey.shade600,
+                    ),
+                  ),
+              ],
             ),
           ),
           PopupMenuButton<Siralama>(

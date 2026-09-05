@@ -34,20 +34,21 @@ class UrunGorseli extends StatelessWidget {
   }
 
   Widget _yerTutucu({bool yukleniyor = false}) {
+    // Yüklenirken dönen halka yerine düz gri alan: kart ızgarasında altı
+    // halka aynı anda dönünce ekran kıpır kıpır oluyordu. Sessiz bir gri
+    // hem sakin duruyor hem görsel gelince göze çarpan bir zıplama olmuyor.
+    if (yukleniyor) {
+      return ColoredBox(color: Colors.grey.shade100);
+    }
+
     return Container(
-      color: Colors.grey.shade200,
+      color: Colors.grey.shade100,
       child: Center(
-        child: yukleniyor
-            ? const SizedBox(
-                width: 22,
-                height: 22,
-                child: CircularProgressIndicator(strokeWidth: 2),
-              )
-            : Icon(
-                Icons.image_outlined,
-                color: Colors.grey.shade400,
-                size: simgeBoyutu,
-              ),
+        child: Icon(
+          Icons.image_not_supported_outlined,
+          color: Colors.grey.shade400,
+          size: simgeBoyutu,
+        ),
       ),
     );
   }

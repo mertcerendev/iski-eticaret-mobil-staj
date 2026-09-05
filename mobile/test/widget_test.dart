@@ -32,7 +32,10 @@ void main() {
             body: Center(
               child: SizedBox(
                 width: 180,
-                height: 290,
+                // Kartın kendi ölçüsü: kare görsel (180) + metin bölümü.
+                // Sabit sayı yazmak yerine karttan okunuyor; kart tasarımı
+                // değişirse test de kendiliğinden uyum sağlıyor.
+                height: 180 + UrunKarti.metinYuksekligi,
                 child: UrunKarti(urun: urun, heroOneki: 'test'),
               ),
             ),

@@ -25,6 +25,21 @@ class UrunProvider extends ChangeNotifier {
   final List<Urun> _urunler = [];
   final List<Kategori> _kategoriler = [];
 
+  /// Ana ekrandaki keşif şeritleri.
+  ///
+  /// İkisi de ana listeden bağımsız, küçük ve tek seferlik isteklerle
+  /// dolduruluyor. Ana liste kullanıcının süzgeçlerine göre değişiyor;
+  /// şeritler ise sabit kalmalı ki kullanıcı arama yaptığında keşif içeriği
+  /// altından kaymasın.
+  ///
+  /// **Neden "Çok Satanlar" yok?** Satış adedi verisi sunucuda toplanmıyor.
+  /// Uydurma bir sıralamayı "çok satan" diye sunmak yerine, elimizdeki
+  /// veriyle doğru olan iki başlık seçildi.
+  final List<Urun> _yeniUrunler = [];
+  final List<Urun> _uygunUrunler = [];
+
+  static const int _seritBoyutu = 8;
+
   bool _ilkYuklemeSuruyor = true;
   bool _dahaYukleniyor = false;
   String? _hata;
@@ -50,6 +65,12 @@ class UrunProvider extends ChangeNotifier {
 
   List<Urun> get urunler => List.unmodifiable(_urunler);
   List<Kategori> get kategoriler => List.unmodifiable(_kategoriler);
+  List<Urun> get yeniUrunler => List.unmodifiable(_yeniUrunler);
+  List<Urun> get uygunUrunler => List.unmodifiable(_uygunUrunler);
+
+  /// Keşif şeritleri yalnızca kullanıcı arama ya da süzgeç uygulamadığında
+  /// gösteriliyor; arama yapılırken ekranın sonuçlara ayrılması gerekiyor.
+  bool get kesifGosterilsin => !suzgecUygulandi && _yeniUrunler.isNotEmpty;
 
   bool get ilkYuklemeSuruyor => _ilkYuklemeSuruyor;
   bool get dahaYukleniyor => _dahaYukleniyor;
@@ -79,8 +100,44 @@ class UrunProvider extends ChangeNotifier {
   Future<void> baslat() async {
     await Future.wait([
       _kategorileriYukle(),
+      _seritleriYukle(),
       yenidenYukle(),
     ]);
+  }
+
+  /// Keşif şeritlerini bir kez doldurur.
+  ///
+  /// İki istek aynı anda gidiyor. Hata durumunda şeritler gizleniyor ama ana
+  /// liste çalışmaya devam ediyor; keşif içeriği vazgeçilebilir bir katman.
+  Future<void> _seritleriYukle() async {
+    Future<List<Urun>> getir(Siralama siralama) async {
+      final sonuc = await _urunServisi.listele(
+        siralama: siralama,
+        sayfa: 1,
+        limit: _seritBoyutu,
+      );
+
+      return sonuc.kayitlar;
+    }
+
+    try {
+      final sonuclar = await Future.wait([
+        getir(Siralama.yeni),
+        getir(Siralama.ucuz),
+      ]);
+
+      _yeniUrunler
+        ..clear()
+        ..addAll(sonuclar[0]);
+
+      _uygunUrunler
+        ..clear()
+        ..addAll(sonuclar[1]);
+
+      notifyListeners();
+    } catch (_) {
+      // Şeritler gelmezse ana liste yine çalışıyor; hata ekrana taşınmıyor.
+    }
   }
 
   /// Arama kutusuna her harf girildiğinde çağrılır ama istek hemen atılmaz.
