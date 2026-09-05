@@ -82,4 +82,77 @@ async function profilGetir(kullaniciId) {
   return kullaniciyiTemizle(kullanici);
 }
 
-module.exports = { kayitOl, girisYap, profilGetir };
+/**
+ * Kullanıcının kendi adını günceller.
+ *
+ * E-posta değiştirilemiyor: kimliğin kendisi ve giriş anahtarı. Değişmesi
+ * benzersizlik denetimi, doğrulama postası ve oturum tazeleme gerektirirdi;
+ * bu projenin kapsamı dışında tutuldu.
+ */
+async function profilGuncelle(kullaniciId, { fullName }) {
+  if (!fullName || !String(fullName).trim()) {
+    throw new ApiHatasi('Ad soyad zorunludur.', 400);
+  }
+
+  const temiz = String(fullName).trim();
+
+  if (temiz.length < 3 || temiz.length > 100) {
+    throw new ApiHatasi('Ad soyad 3-100 karakter olmalıdır.', 400);
+  }
+
+  const kullanici = await prisma.user.update({
+    where: { id: kullaniciId },
+    data: { fullName: temiz },
+  });
+
+  return kullaniciyiTemizle(kullanici);
+}
+
+/**
+ * Parola değiştirme.
+ *
+ * Mevcut parola da isteniyor: oturumu ele geçiren birinin parolayı tek
+ * başına değiştirip hesabı kilitlemesi engelleniyor.
+ */
+async function parolaDegistir(kullaniciId, { currentPassword, newPassword }) {
+  if (!currentPassword || !newPassword) {
+    throw new ApiHatasi('Mevcut ve yeni parola zorunludur.', 400);
+  }
+
+  if (newPassword.length < 8) {
+    throw new ApiHatasi('Yeni parola en az 8 karakter olmalıdır.', 400);
+  }
+
+  if (currentPassword === newPassword) {
+    throw new ApiHatasi('Yeni parola eskisiyle aynı olamaz.', 400);
+  }
+
+  const kullanici = await prisma.user.findUnique({ where: { id: kullaniciId } });
+
+  if (!kullanici) {
+    throw new ApiHatasi('Kullanıcı bulunamadı.', 404);
+  }
+
+  const dogru = await bcrypt.compare(currentPassword, kullanici.passwordHash);
+
+  if (!dogru) {
+    // Bilerek 401 DEĞİL: istemcideki HTTP katmanı 401'i "oturum düştü" olarak
+    // yorumlayıp token'ı siliyor ve kullanıcıyı giriş ekranına atıyor. Burada
+    // oturum geçerli, hatalı olan yalnızca gövdedeki parola. 401 dönseydi
+    // kullanıcı parolasını bir kez yanlış yazdığında uygulamadan atılırdı.
+    throw new ApiHatasi('Mevcut parolanız hatalı.', 400);
+  }
+
+  await prisma.user.update({
+    where: { id: kullaniciId },
+    data: { passwordHash: await bcrypt.hash(newPassword, TUR_SAYISI) },
+  });
+}
+
+module.exports = {
+  kayitOl,
+  girisYap,
+  profilGetir,
+  profilGuncelle,
+  parolaDegistir,
+};
