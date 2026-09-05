@@ -37,6 +37,10 @@ class UrunProvider extends ChangeNotifier {
   int _toplamSayfa = 1;
   int _toplam = 0;
 
+  /// Yönetici işlemi (ekleme/güncelleme/silme) sürerken doğru; form ve
+  /// onay penceresindeki düğmeleri kilitler.
+  bool _yoneticiIslemi = false;
+
   Timer? _aramaSayaci;
 
   /// Yarışan isteklerin sonucunu ayırt etmek için kullanılır. Kullanıcı
@@ -62,6 +66,8 @@ class UrunProvider extends ChangeNotifier {
   bool get dahaVarMi => _sayfa < _toplamSayfa;
 
   bool get suzgecUygulandi => _arama.isNotEmpty || _seciliKategoriId != null;
+
+  bool get yoneticiIslemi => _yoneticiIslemi;
 
   @override
   void dispose() {
@@ -183,10 +189,89 @@ class UrunProvider extends ChangeNotifier {
       // kaydırarak tekrar deneyebilir. Ekranı hataya çevirmek, çalışan
       // listeyi kaybettireceği için tercih edilmedi.
     } finally {
-      if (sira == _istekSirasi) {
-        _dahaYukleniyor = false;
-        notifyListeners();
-      }
+      // Bayrak yalnızca bu isteğe ait, koşulsuz sıfırlanır. `sira` denetimine
+      // bağlanırsa şu tuzak doğuyordu: istek uçarken `yenidenYukle` çalışınca
+      // koşul tutmaz, bayrak `true` kalır ve yukarıdaki bekçi bir daha bu
+      // gövdeye girilmesine izin vermediği için sonsuz kaydırma kalıcı olarak
+      // durur — listenin altındaki halka da hiç kaybolmaz.
+      _dahaYukleniyor = false;
+      notifyListeners();
+    }
+  }
+
+  // ── Yönetici işlemleri ──────────────────────────────────────────
+  // Üçü de aynı kalıbı izliyor: kilitle, çağır, listeyi tazele, kilidi aç.
+  // Hata mesajını **döndürüyorlar**, ekranda göstermiyorlar.
+  //
+  // İşlem bitince `yenidenYukle` çağrılıyor: eklenen ürün listede görünsün,
+  // güncellenen ürünün yeni fiyatı yansısın, silinen ürün kaybolsun. Yerel
+  // listeyi elle düzenlemek daha hızlı olurdu ama sıralama ve süzgeç
+  // ölçütleri sunucuda uygulandığı için ürünün listede nereye gireceğini
+  // istemci bilemez.
+
+  Future<String?> urunEkle({
+    required String ad,
+    required String aciklama,
+    required String fiyat,
+    required int stok,
+    required int kategoriId,
+    String? gorselUrl,
+  }) {
+    return _yoneticiIslem(
+      () => _urunServisi.olustur(
+        ad: ad,
+        aciklama: aciklama,
+        fiyat: fiyat,
+        stok: stok,
+        kategoriId: kategoriId,
+        gorselUrl: gorselUrl,
+      ),
+    );
+  }
+
+  Future<String?> urunGuncelle({
+    required int id,
+    required String ad,
+    required String aciklama,
+    required String fiyat,
+    required int stok,
+    required int kategoriId,
+    String? gorselUrl,
+  }) {
+    return _yoneticiIslem(
+      () => _urunServisi.guncelle(
+        id: id,
+        ad: ad,
+        aciklama: aciklama,
+        fiyat: fiyat,
+        stok: stok,
+        kategoriId: kategoriId,
+        gorselUrl: gorselUrl,
+      ),
+    );
+  }
+
+  Future<String?> urunSil(int id) {
+    return _yoneticiIslem(() => _urunServisi.sil(id));
+  }
+
+  Future<String?> _yoneticiIslem(Future<void> Function() cagri) async {
+    _yoneticiIslemi = true;
+    notifyListeners();
+
+    try {
+      await cagri();
+
+      // Liste sunucudan yeniden çekiliyor; `yenidenYukle` kendi içinde
+      // `notifyListeners` çağırıyor.
+      await yenidenYukle();
+
+      return null;
+    } catch (hata) {
+      return hataMesaji(hata);
+    } finally {
+      _yoneticiIslemi = false;
+      notifyListeners();
     }
   }
 

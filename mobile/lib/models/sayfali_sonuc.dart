@@ -18,9 +18,6 @@ class SayfaliSonuc<T> {
     required this.toplamSayfa,
   });
 
-  /// Sonsuz kaydırmada "daha var mı" kararını verir.
-  bool get sonSayfaMi => sayfa >= toplamSayfa;
-
   /// [cozumleyici], her bir kaydı nesneye çeviren fonksiyondur. Zarfı çözmek
   /// her tür için aynı, kaydı çözmek türe özeldir; o yüzden dışarıdan alınır.
   factory SayfaliSonuc.fromJson(

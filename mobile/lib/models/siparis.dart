@@ -1,3 +1,5 @@
+import 'urun.dart';
+
 /// Siparişin sunucudaki durum makinesindeki yeri.
 ///
 /// Anahtarlar sunucudaki `OrderStatus` enum'u ile birebir aynı; etiketler
@@ -15,6 +17,28 @@ enum SiparisDurumu {
   final String etiket;
 
   const SiparisDurumu(this.anahtar, this.etiket);
+
+  /// Bu durumdan geçilebilecek durumlar.
+  ///
+  /// Sunucudaki `DURUM_GECISLERI` tablosunun aynası. Yönetici ekranı yalnızca
+  /// buradaki seçenekleri sunuyor; sunucunun reddedeceği bir geçiş kullanıcıya
+  /// hiç gösterilmiyor. Asıl denetim yine sunucuda — bu liste sadece geçersiz
+  /// isteği baştan engelliyor.
+  List<SiparisDurumu> get sonrakiler {
+    switch (this) {
+      case SiparisDurumu.bekliyor:
+        return const [SiparisDurumu.odendi, SiparisDurumu.iptalEdildi];
+      case SiparisDurumu.odendi:
+        return const [SiparisDurumu.hazirlaniyor, SiparisDurumu.iptalEdildi];
+      case SiparisDurumu.hazirlaniyor:
+        return const [SiparisDurumu.kargoda, SiparisDurumu.iptalEdildi];
+      case SiparisDurumu.kargoda:
+        return const [SiparisDurumu.teslimEdildi];
+      case SiparisDurumu.teslimEdildi:
+      case SiparisDurumu.iptalEdildi:
+        return const [];
+    }
+  }
 
   /// Sunucuya ileride yeni bir durum eklenirse uygulama çökmesin diye
   /// tanınmayan değer için varsayılan döndürülür.
@@ -60,7 +84,31 @@ class SiparisKalemi {
       urunAd: (urun?['name'] as String?) ?? 'Ürün',
       gorselUrl: urun?['imageUrl'] as String?,
       adet: json['quantity'] as int,
-      birimFiyat: _sayiyaCevir(json['unitPrice']),
+      birimFiyat: Urun.sayiyaCevir(json['unitPrice']),
+    );
+  }
+}
+
+/// Siparişi veren kullanıcı.
+///
+/// Yalnızca yönetici listelemesinde geliyor; kullanıcı kendi siparişlerini
+/// görürken bu bilgi gereksiz olduğu için sunucu göndermiyor.
+class SiparisMusterisi {
+  final int id;
+  final String adSoyad;
+  final String eposta;
+
+  const SiparisMusterisi({
+    required this.id,
+    required this.adSoyad,
+    required this.eposta,
+  });
+
+  factory SiparisMusterisi.fromJson(Map<String, dynamic> json) {
+    return SiparisMusterisi(
+      id: json['id'] as int,
+      adSoyad: (json['fullName'] as String?) ?? '',
+      eposta: (json['email'] as String?) ?? '',
     );
   }
 }
@@ -79,6 +127,9 @@ class Siparis {
   final String? kartSonDort;
   final String? kartSahibi;
 
+  /// Yalnızca yönetici listelemesinde dolu.
+  final SiparisMusterisi? musteri;
+
   const Siparis({
     required this.id,
     required this.toplamTutar,
@@ -88,7 +139,27 @@ class Siparis {
     required this.kalemler,
     this.kartSonDort,
     this.kartSahibi,
+    this.musteri,
   });
+
+  /// Aynı siparişin, müşteri bilgisi verilenle değiştirilmiş kopyası.
+  ///
+  /// Durum güncelleme ucu (`PATCH /orders/:id/status`) yanıtında `user`
+  /// alanını döndürmüyor. Dönen kayıt listedeki eskinin yerine olduğu gibi
+  /// konulsaydı yönetici ekranındaki müşteri satırı kaybolurdu.
+  Siparis musteriIle(SiparisMusterisi? yeniMusteri) {
+    return Siparis(
+      id: id,
+      toplamTutar: toplamTutar,
+      durum: durum,
+      adres: adres,
+      olusturulma: olusturulma,
+      kalemler: kalemler,
+      kartSonDort: kartSonDort,
+      kartSahibi: kartSahibi,
+      musteri: yeniMusteri,
+    );
+  }
 
   String get toplamMetni => '${toplamTutar.toStringAsFixed(2)} TL';
 
@@ -115,7 +186,7 @@ class Siparis {
   factory Siparis.fromJson(Map<String, dynamic> json) {
     return Siparis(
       id: json['id'] as int,
-      toplamTutar: _sayiyaCevir(json['totalAmount']),
+      toplamTutar: Urun.sayiyaCevir(json['totalAmount']),
       durum: SiparisDurumu.cozumle(json['status'] as String?),
       adres: (json['addressText'] as String?) ?? '',
       olusturulma:
@@ -125,13 +196,9 @@ class Siparis {
           .toList(),
       kartSonDort: json['cardLast4'] as String?,
       kartSahibi: json['cardHolderName'] as String?,
+      musteri: json['user'] == null
+          ? null
+          : SiparisMusterisi.fromJson(json['user'] as Map<String, dynamic>),
     );
   }
-}
-
-/// Sunucu para alanlarını `Decimal` tipinden metin olarak gönderir.
-double _sayiyaCevir(Object? deger) {
-  if (deger == null) return 0;
-  if (deger is num) return deger.toDouble();
-  return double.tryParse(deger.toString()) ?? 0;
 }

@@ -28,11 +28,4 @@ class Kullanici {
       rol: json['role'] as String,
     );
   }
-
-  Map<String, dynamic> toJson() => {
-        'id': id,
-        'email': eposta,
-        'fullName': adSoyad,
-        'role': rol,
-      };
 }

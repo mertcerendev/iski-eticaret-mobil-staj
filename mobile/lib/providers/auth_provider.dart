@@ -86,6 +86,52 @@ class AuthProvider extends ChangeNotifier {
     _oturumuDusur();
   }
 
+  /// Adı günceller; başarılıysa bellekteki kullanıcı da tazelenir.
+  ///
+  /// Hata mesajını döndürür, hata yoksa `null`. Ekran nasıl göstereceğine
+  /// kendisi karar verir.
+  Future<String?> profilGuncelle(String adSoyad) async {
+    _islemSuruyor = true;
+    notifyListeners();
+
+    try {
+      _kullanici = await _servis.profilGuncelle(adSoyad);
+
+      return null;
+    } catch (hata) {
+      return hataMesaji(hata);
+    } finally {
+      _islemSuruyor = false;
+      notifyListeners();
+    }
+  }
+
+  /// Parolayı değiştirir.
+  ///
+  /// Oturum düşürülmüyor: sunucu token'ı geçersiz kılmıyor, kullanıcı da
+  /// çalışmasına kaldığı yerden devam edebiliyor.
+  Future<String?> parolaDegistir({
+    required String mevcutParola,
+    required String yeniParola,
+  }) async {
+    _islemSuruyor = true;
+    notifyListeners();
+
+    try {
+      await _servis.parolaDegistir(
+        mevcutParola: mevcutParola,
+        yeniParola: yeniParola,
+      );
+
+      return null;
+    } catch (hata) {
+      return hataMesaji(hata);
+    } finally {
+      _islemSuruyor = false;
+      notifyListeners();
+    }
+  }
+
   void hatayiTemizle() {
     if (_hata == null) return;
     _hata = null;

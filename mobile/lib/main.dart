@@ -5,7 +5,9 @@ import 'core/theme/app_theme.dart';
 import 'providers/auth_provider.dart';
 import 'providers/favori_provider.dart';
 import 'providers/sepet_provider.dart';
+import 'providers/siparis_provider.dart';
 import 'providers/urun_provider.dart';
+import 'providers/yonetici_siparis_provider.dart';
 import 'screens/ana_kabuk.dart';
 import 'screens/giris_ekrani.dart';
 
@@ -30,9 +32,18 @@ class UygulamaKoku extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => UrunProvider()),
         ChangeNotifierProvider(create: (_) => FavoriProvider()),
         ChangeNotifierProvider(create: (_) => SepetProvider()),
+
+        // Sipariş geçmişi yalnızca profil sekmesinden açılıyor ama
+        // sağlayıcı burada kuruluyor: sipariş verildikten sonra listenin
+        // tazelenmesi gerekiyor ve o iş ödeme ekranından tetikleniyor.
+        ChangeNotifierProvider(create: (_) => SiparisProvider()),
+
+        // Yönetici sipariş listesi ayrı tutuluyor: kullanıcının kendi
+        // geçmişiyle farklı veri kümeleri.
+        ChangeNotifierProvider(create: (_) => YoneticiSiparisProvider()),
       ],
       child: MaterialApp(
-        title: 'İSKİ E-Ticaret',
+        title: 'Nuvia',
         debugShowCheckedModeBanner: false,
         theme: UygulamaTemasi.acik,
         home: const OturumKapisi(),

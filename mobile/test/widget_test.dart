@@ -10,6 +10,7 @@ import 'package:mobile/models/sepet.dart';
 import 'package:mobile/models/siparis.dart';
 import 'package:mobile/models/urun.dart';
 import 'package:mobile/providers/favori_provider.dart';
+import 'package:mobile/widgets/siparis_durum_rozeti.dart';
 import 'package:mobile/widgets/urun_karti.dart';
 
 void main() {
@@ -142,7 +143,10 @@ void main() {
       expect(sonuc.kayitlar, hasLength(1));
       expect(sonuc.kayitlar.first.fiyat, 1499.9);
       expect(sonuc.toplam, 17);
-      expect(sonuc.sonSayfaMi, isFalse); // 1. sayfa, toplam 2 sayfa
+      // Sayfalama alanları doğru çözülmeli; "daha var mı" kararını
+      // `UrunProvider` bu iki alandan veriyor.
+      expect(sonuc.sayfa, 1);
+      expect(sonuc.toplamSayfa, 2);
     });
   });
 
@@ -287,6 +291,219 @@ void main() {
     });
   });
 
+  group('Urun hesaplanan alanlar', () {
+    Urun urunYap(int stok) => Urun(
+          id: 1,
+          ad: 'Test',
+          aciklama: '',
+          fiyat: 10,
+          stok: stok,
+          kategoriId: 1,
+        );
+
+    test('stok eşiğine göre metin ve bayraklar', () {
+      // Eşik dört ayrı yerde okunuyor (kart rozeti, detay satırı, satır rengi,
+      // sepet uyarısı). Tek yerde tanımlı olduğu buradan sabitleniyor.
+      expect(urunYap(0).stoktaVar, isFalse);
+      expect(urunYap(0).stokMetni, 'Tükendi');
+
+      expect(urunYap(3).sonUrunler, isTrue);
+      expect(urunYap(3).stokMetni, 'Son 3 adet');
+
+      expect(urunYap(5).sonUrunler, isFalse);
+      expect(urunYap(5).stokMetni, 'Stokta');
+    });
+
+    test('fiyat her zaman iki basamakla yazılır', () {
+      expect(urunYap(1).fiyatMetni, '10.00 TL');
+    });
+  });
+
+  group('Urun.sayiyaCevir', () {
+    test('sunucudan metin gelen para değeri sayıya çevrilir', () {
+      // Prisma `Decimal` alanlarını metin olarak gönderiyor; ondalıklı sayıya
+      // çevrim yalnızca gösterim için, hesap sunucuda kalıyor.
+      expect(Urun.sayiyaCevir('1499.90'), 1499.90);
+      expect(Urun.sayiyaCevir(1499.9), 1499.9);
+      expect(Urun.sayiyaCevir(null), 0);
+      expect(Urun.sayiyaCevir('bozuk'), 0);
+    });
+
+    test('sipariş modeli de aynı çeviriciyi kullanıyor', () {
+      // Bu çevirici bir ara `siparis.dart` içinde ikinci kez yazılmıştı;
+      // kopya kaldırıldı, tek kaynak `Urun.sayiyaCevir`.
+      final siparis = Siparis.fromJson({
+        'id': 1,
+        'totalAmount': '31499.70',
+        'status': 'PAID',
+        'addressText': 'Test adresi, Eyupsultan/Istanbul',
+        'createdAt': '2026-09-04T08:00:00.000Z',
+        'items': [
+          {
+            'productId': 1,
+            'quantity': 3,
+            'unitPrice': '1999.90',
+            'product': {'name': 'Kulaklik'},
+          },
+        ],
+      });
+
+      expect(siparis.toplamTutar, 31499.70);
+      expect(siparis.kalemler.first.birimFiyat, 1999.90);
+    });
+  });
+
+  group('Sepet.bos', () {
+    test('boş sepet null yerine çalışan bir nesne', () {
+      // Sepet `null` olsaydı onu okuyan her yer denetim yapmak zorunda
+      // kalırdı; biri unutulduğunda uygulama çökerdi.
+      const sepet = Sepet.bos();
+
+      expect(sepet.bosMu, isTrue);
+      expect(sepet.toplamAdet, 0);
+      expect(sepet.satirlar, isEmpty);
+      expect(sepet.toplamMetni, '0.00 TL');
+    });
+  });
+
+  group('SiparisDurumRozeti', () {
+    Future<void> ciz(WidgetTester tester, SiparisDurumu durum) {
+      return tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(body: SiparisDurumRozeti(durum: durum)),
+        ),
+      );
+    }
+
+    testWidgets('her durum kendi Türkçe etiketiyle çizilir', (tester) async {
+      // Sunucudaki altı durumun hepsi ekranda karşılık bulmalı; biri eksik
+      // kalırsa kullanıcı siparişinin nerede olduğunu göremez.
+      for (final durum in SiparisDurumu.values) {
+        await ciz(tester, durum);
+
+        expect(
+          find.text(durum.etiket),
+          findsOneWidget,
+          reason: '${durum.anahtar} için etiket çizilmedi',
+        );
+      }
+    });
+
+    testWidgets('teslim ve iptal farklı renklerde gösterilir', (tester) async {
+      // Renk kararı modelde değil bu widget'ta; iki uç durumun ayrışması
+      // rozetin işini yaptığının kanıtı.
+      await ciz(tester, SiparisDurumu.teslimEdildi);
+      final teslim = tester.widget<Icon>(find.byType(Icon)).color;
+
+      await ciz(tester, SiparisDurumu.iptalEdildi);
+      final iptal = tester.widget<Icon>(find.byType(Icon)).color;
+
+      expect(teslim, isNot(equals(iptal)));
+    });
+
+    testWidgets('büyük kip yazıyı büyütür', (tester) async {
+      await ciz(tester, SiparisDurumu.odendi);
+      final kucuk = tester.widget<Text>(find.text('Ödendi')).style!.fontSize!;
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: SiparisDurumRozeti(
+              durum: SiparisDurumu.odendi,
+              buyuk: true,
+            ),
+          ),
+        ),
+      );
+      final buyuk = tester.widget<Text>(find.text('Ödendi')).style!.fontSize!;
+
+      expect(buyuk, greaterThan(kucuk));
+    });
+  });
+
+  group('SiparisDurumu geçiş tablosu', () {
+    test('sunucudaki DURUM_GECISLERI ile birebir aynı', () {
+      // Bu tablo sunucudaki `order.service.js` içindeki tablonun aynası.
+      // Ayrışırsa yönetici ekranı sunucunun reddedeceği bir geçiş sunar.
+      expect(SiparisDurumu.bekliyor.sonrakiler,
+          [SiparisDurumu.odendi, SiparisDurumu.iptalEdildi]);
+      expect(SiparisDurumu.odendi.sonrakiler,
+          [SiparisDurumu.hazirlaniyor, SiparisDurumu.iptalEdildi]);
+      expect(SiparisDurumu.hazirlaniyor.sonrakiler,
+          [SiparisDurumu.kargoda, SiparisDurumu.iptalEdildi]);
+      expect(SiparisDurumu.kargoda.sonrakiler, [SiparisDurumu.teslimEdildi]);
+    });
+
+    test('biten durumlardan çıkış yok', () {
+      // Teslim edilmiş sipariş "hazırlanıyor"a geri dönemez.
+      expect(SiparisDurumu.teslimEdildi.sonrakiler, isEmpty);
+      expect(SiparisDurumu.iptalEdildi.sonrakiler, isEmpty);
+    });
+  });
+
+  group('SiparisMusterisi', () {
+    test('yönetici listelemesindeki kullanıcı bilgisi çözülür', () {
+      final siparis = Siparis.fromJson({
+        'id': 7,
+        'totalAmount': '250.00',
+        'status': 'PAID',
+        'addressText': 'Test adresi, Eyupsultan/Istanbul',
+        'createdAt': '2026-09-04T08:00:00.000Z',
+        'items': [],
+        'user': {
+          'id': 3,
+          'fullName': 'Ayse Yilmaz',
+          'email': 'ayse@ornek.com',
+        },
+      });
+
+      expect(siparis.musteri, isNotNull);
+      expect(siparis.musteri!.adSoyad, 'Ayse Yilmaz');
+      expect(siparis.musteri!.eposta, 'ayse@ornek.com');
+    });
+
+    test('durum güncellemesinden sonra müşteri bilgisi korunur', () {
+      // PATCH yanıtı `user` alanını döndürmüyor. Dönen kayıt olduğu gibi
+      // konulsaydı yönetici ekranındaki müşteri satırı kaybolurdu.
+      final eldeki = Siparis.fromJson({
+        'id': 9,
+        'totalAmount': '300.00',
+        'status': 'PAID',
+        'addressText': 'Test adresi, Eyupsultan/Istanbul',
+        'createdAt': '2026-09-04T08:00:00.000Z',
+        'items': [],
+        'user': {'id': 3, 'fullName': 'Ayse Yilmaz', 'email': 'a@b.com'},
+      });
+
+      final sunucudanGelen = Siparis.fromJson({
+        'id': 9,
+        'totalAmount': '300.00',
+        'status': 'PREPARING',
+        'addressText': 'Test adresi, Eyupsultan/Istanbul',
+        'createdAt': '2026-09-04T08:00:00.000Z',
+        'items': [],
+      });
+
+      final birlesik = sunucudanGelen.musteriIle(eldeki.musteri);
+
+      expect(birlesik.durum, SiparisDurumu.hazirlaniyor);
+      expect(birlesik.musteri?.adSoyad, 'Ayse Yilmaz');
+    });
+
+    test('kullanıcı kendi listesinde müşteri alanı boş kalır', () {
+      final siparis = Siparis.fromJson({
+        'id': 8,
+        'totalAmount': '100.00',
+        'status': 'PAID',
+        'addressText': 'Test adresi, Eyupsultan/Istanbul',
+        'createdAt': '2026-09-04T08:00:00.000Z',
+        'items': [],
+      });
+
+      expect(siparis.musteri, isNull);
+    });
+  });
+
   group('Dogrulayicilar - ödeme', () {
     test('Luhn kontrol hanesi tutmayan numara reddedilir', () {
       expect(Dogrulayicilar.kartNumarasi('4242 4242 4242 4242'), isNull);
@@ -314,6 +531,36 @@ void main() {
     test('adres en az 10 karakter olmalıdır', () {
       expect(Dogrulayicilar.adres('Kadikoy'), isNotNull);
       expect(Dogrulayicilar.adres('Güzeltepe Mahallesi No 7'), isNull);
+    });
+  });
+
+  group('Dogrulayicilar - ürün formu', () {
+    test('fiyat en fazla iki ondalıklı olmalı, virgül kabul edilmez', () {
+      // Sunucu `^\d+(\.\d{1,2})?$` deseniyle denetliyor; virgüllü
+      // değer oraya gidince reddedilirdi.
+      expect(Dogrulayicilar.fiyat('1499.90'), isNull);
+      expect(Dogrulayicilar.fiyat('0'), isNull);
+      expect(Dogrulayicilar.fiyat('1499,90'), isNotNull);
+      expect(Dogrulayicilar.fiyat('1499.905'), isNotNull);
+      expect(Dogrulayicilar.fiyat('-5'), isNotNull);
+      expect(Dogrulayicilar.fiyat(''), isNotNull);
+    });
+
+    test('stok negatif olamaz, ondalık olamaz', () {
+      expect(Dogrulayicilar.stok('0'), isNull);
+      expect(Dogrulayicilar.stok('25'), isNull);
+      expect(Dogrulayicilar.stok('-1'), isNotNull);
+      expect(Dogrulayicilar.stok('2.5'), isNotNull);
+      expect(Dogrulayicilar.stok(''), isNotNull);
+    });
+
+    test('ürün adı ve açıklama sunucudaki sınırlarla aynı', () {
+      expect(Dogrulayicilar.urunAdi('Oyuncu Faresi'), isNull);
+      expect(Dogrulayicilar.urunAdi(''), isNotNull);
+      expect(Dogrulayicilar.urunAdi('a' * 201), isNotNull);
+
+      expect(Dogrulayicilar.urunAciklamasi('Kısa açıklama'), isNull);
+      expect(Dogrulayicilar.urunAciklamasi('a' * 2001), isNotNull);
     });
   });
 

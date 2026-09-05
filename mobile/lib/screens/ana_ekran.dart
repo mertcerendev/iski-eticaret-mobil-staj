@@ -7,6 +7,7 @@ import '../services/urun_service.dart';
 import '../widgets/durum_gorunumleri.dart';
 import '../widgets/urun_karti.dart';
 import 'urun_detay_ekrani.dart';
+import 'urun_formu_ekrani.dart';
 
 class AnaEkran extends StatefulWidget {
   const AnaEkran({super.key});
@@ -60,10 +61,23 @@ class _AnaEkraniDurumu extends State<AnaEkran> {
 
   @override
   Widget build(BuildContext context) {
+    // Ekleme düğmesi yalnızca yöneticiye gösteriliyor. Bu bir görünüm
+    // kolaylığı; asıl yetki denetimi sunucudaki `requireAdmin` katmanında.
+    final yoneticiMi = context.watch<AuthProvider>().yoneticiMi;
+
     return Scaffold(
       // Favorilere ve çıkışa artık alt gezinme çubuğundan gidiliyor;
       // başlık çubuğunda simge kalmadı.
       appBar: AppBar(title: const Text('Ürünler')),
+      floatingActionButton: yoneticiMi
+          ? FloatingActionButton.extended(
+              onPressed: () => Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const UrunFormuEkrani()),
+              ),
+              icon: const Icon(Icons.add),
+              label: const Text('Yeni Ürün'),
+            )
+          : null,
       body: Column(
         children: [
           const _KullaniciSeridi(),

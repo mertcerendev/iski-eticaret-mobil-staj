@@ -58,6 +58,36 @@ class AuthServisi {
     return Kullanici.fromJson(yanit.data as Map<String, dynamic>);
   }
 
+  /// Kullanıcının adını günceller ve güncel kaydı döndürür.
+  ///
+  /// E-posta değiştirilemiyor: hem kimliğin kendisi hem giriş anahtarı.
+  Future<Kullanici> profilGuncelle(String adSoyad) async {
+    final yanit = await _istemci.dio.patch(
+      ApiSabitleri.profil,
+      data: {'fullName': adSoyad},
+    );
+
+    return Kullanici.fromJson(yanit.data as Map<String, dynamic>);
+  }
+
+  /// Parolayı değiştirir.
+  ///
+  /// Mevcut parola da gönderiliyor: oturumu ele geçiren birinin parolayı tek
+  /// başına değiştirip hesabı kilitlemesi engelleniyor. Sunucu yanıt gövdesi
+  /// döndürmüyor (204).
+  Future<void> parolaDegistir({
+    required String mevcutParola,
+    required String yeniParola,
+  }) async {
+    await _istemci.dio.patch(
+      ApiSabitleri.parolaDegistir,
+      data: {
+        'currentPassword': mevcutParola,
+        'newPassword': yeniParola,
+      },
+    );
+  }
+
   OturumSonucu _oturumuCoz(Map<String, dynamic> govde) {
     return OturumSonucu(
       kullanici: Kullanici.fromJson(govde['user'] as Map<String, dynamic>),

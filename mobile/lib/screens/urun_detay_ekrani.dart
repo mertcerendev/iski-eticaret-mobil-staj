@@ -3,10 +3,13 @@ import 'package:provider/provider.dart';
 
 import '../core/bildirim.dart';
 import '../models/urun.dart';
+import '../providers/auth_provider.dart';
 import '../providers/sepet_provider.dart';
+import '../providers/urun_provider.dart';
 import '../widgets/adet_secici.dart';
 import '../widgets/favori_dugmesi.dart';
 import '../widgets/urun_gorseli.dart';
+import 'urun_formu_ekrani.dart';
 
 class UrunDetayEkrani extends StatefulWidget {
   final Urun urun;
@@ -52,6 +55,63 @@ class _UrunDetayEkraniDurumu extends State<UrunDetayEkrani> {
     Bildirim(context).sonuc(hata, '$_adet adet sepete eklendi.');
   }
 
+  /// Formu açar; kaydedildiyse bu ekran da kapatılır.
+  ///
+  /// Ekrandaki [Urun] nesnesi listeden parametre olarak geldiği için
+  /// güncellemeden sonra bayatlıyor. Kaydı yeniden çekmek yerine ekran
+  /// kapatılıyor: kullanıcı zaten tazelenmiş listeye dönüyor.
+  Future<void> _duzenle() async {
+    final yonlendirici = Navigator.of(context);
+
+    final kaydedildi = await yonlendirici.push<bool>(
+      MaterialPageRoute(builder: (_) => UrunFormuEkrani(urun: _urun)),
+    );
+
+    if (kaydedildi == true && mounted) yonlendirici.pop();
+  }
+
+  Future<void> _sil() async {
+    final saglayici = context.read<UrunProvider>();
+    final yonlendirici = Navigator.of(context);
+    final bildir = Bildirim(context);
+
+    final onay = await showDialog<bool>(
+      context: context,
+      builder: (pencere) => AlertDialog(
+        title: const Text('Ürün satıştan kaldırılsın mı?'),
+        // Sunucuda kayıt gerçekten silinmiyor; geçmiş siparişler bu ürüne
+        // bağlı olduğu için yalnızca pasife alınıyor. Metin de bunu söylüyor.
+        content: Text(
+          '"${_urun.ad}" listeden kaldırılacak. '
+          'Geçmiş siparişlerdeki kaydı korunur.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(pencere).pop(false),
+            child: const Text('Vazgeç'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(pencere).pop(true),
+            child: const Text('Kaldır'),
+          ),
+        ],
+      ),
+    );
+
+    if (onay != true) return;
+
+    final hata = await saglayici.urunSil(_urun.id);
+
+    if (!mounted) return;
+
+    if (hata != null) {
+      bildir.hata(hata);
+      return;
+    }
+
+    yonlendirici.pop();
+  }
+
   @override
   Widget build(BuildContext context) {
     final tema = Theme.of(context);
@@ -60,10 +120,24 @@ class _UrunDetayEkraniDurumu extends State<UrunDetayEkrani> {
       (saglayici) => saglayici.islemdeMi(_urun.id),
     );
 
+    final yoneticiMi = context.watch<AuthProvider>().yoneticiMi;
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Ürün Detayı'),
         actions: [
+          if (yoneticiMi) ...[
+            IconButton(
+              tooltip: 'Düzenle',
+              icon: const Icon(Icons.edit_outlined),
+              onPressed: _duzenle,
+            ),
+            IconButton(
+              tooltip: 'Satıştan kaldır',
+              icon: const Icon(Icons.delete_outline),
+              onPressed: _sil,
+            ),
+          ],
           Padding(
             padding: const EdgeInsets.only(right: 8),
             child: FavoriDugmesi(urun: _urun, renk: Colors.white),

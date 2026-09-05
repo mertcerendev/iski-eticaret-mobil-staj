@@ -6,6 +6,9 @@ import '../providers/auth_provider.dart';
 import '../providers/favori_provider.dart';
 import '../providers/sepet_provider.dart';
 import '../widgets/durum_gorunumleri.dart';
+import 'profil_duzenle_ekrani.dart';
+import 'siparislerim_ekrani.dart';
+import 'yonetici_siparisler_ekrani.dart';
 
 /// Giriş yapan kullanıcının bilgileri ve çıkış düğmesi.
 ///
@@ -20,7 +23,21 @@ class ProfilEkrani extends StatelessWidget {
     final kullanici = context.watch<AuthProvider>().kullanici;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Profilim')),
+      appBar: AppBar(
+        title: const Text('Profilim'),
+        actions: [
+          if (kullanici != null)
+            IconButton(
+              tooltip: 'Profili düzenle',
+              icon: const Icon(Icons.edit_outlined),
+              onPressed: () => Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => ProfilDuzenleEkrani(kullanici: kullanici),
+                ),
+              ),
+            ),
+        ],
+      ),
       body: kullanici == null
           ? const YukleniyorGorunumu()
           : ListView(
@@ -29,7 +46,51 @@ class ProfilEkrani extends StatelessWidget {
                 _KimlikKarti(kullanici: kullanici),
                 const SizedBox(height: 16),
                 const _SayilarSatiri(),
+                const SizedBox(height: 16),
+
+                // Sipariş geçmişi alt gezinmede kendi sekmesini almadı:
+                // dört sekme dolu ve geçmiş günlük kullanılan bir bölüm değil.
+                Card(
+                  child: ListTile(
+                    leading: Icon(
+                      Icons.receipt_long,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+                    title: const Text('Siparişlerim'),
+                    subtitle: const Text('Geçmiş siparişleriniz ve durumları'),
+                    trailing: const Icon(Icons.chevron_right),
+                    onTap: () => Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => const SiparislerimEkrani(),
+                      ),
+                    ),
+                  ),
+                ),
+
+                // Yönetici bölümü yalnızca rolü uygun olana çiziliyor.
+                if (kullanici.yoneticiMi) ...[
+                  const SizedBox(height: 12),
+                  Card(
+                    child: ListTile(
+                      leading: Icon(
+                        Icons.admin_panel_settings_outlined,
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
+                      title: const Text('Sipariş Yönetimi'),
+                      subtitle: const Text(
+                        'Tüm siparişleri görüntüle ve durumlarını güncelle',
+                      ),
+                      trailing: const Icon(Icons.chevron_right),
+                      onTap: () => Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => const YoneticiSiparislerEkrani(),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
                 const SizedBox(height: 24),
+
                 FilledButton.icon(
                   onPressed: () => _cikisOnayi(context),
                   icon: const Icon(Icons.logout),

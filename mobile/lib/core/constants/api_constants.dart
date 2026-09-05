@@ -15,6 +15,7 @@ class ApiSabitleri {
   static const String kayit = '/auth/register';
   static const String giris = '/auth/login';
   static const String profil = '/auth/me';
+  static const String parolaDegistir = '/auth/me/password';
 
   // Katalog
   static const String kategoriler = '/categories';

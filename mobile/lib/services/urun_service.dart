@@ -62,9 +62,69 @@ class UrunServisi {
     );
   }
 
-  Future<Urun> detay(int id) async {
-    final yanit = await _istemci.dio.get('${ApiSabitleri.urunler}/$id');
+  // ── Yönetici işlemleri ──────────────────────────────────────────
+  // Üç uç da sunucuda `requireAdmin` ile korunuyor. İstemci tarafında
+  // düğmeleri gizlemek yalnızca görünüm kolaylığı; asıl denetim sunucuda.
+
+  /// Yeni ürün ekler. Fiyat sunucuya **metin** olarak gidiyor: `Decimal`
+  /// alanına yazılırken kuruş hassasiyeti kaybolmasın diye.
+  Future<Urun> olustur({
+    required String ad,
+    required String aciklama,
+    required String fiyat,
+    required int stok,
+    required int kategoriId,
+    String? gorselUrl,
+  }) async {
+    final yanit = await _istemci.dio.post(
+      ApiSabitleri.urunler,
+      data: {
+        'name': ad,
+        'description': aciklama,
+        'price': fiyat,
+        'stock': stok,
+        'categoryId': kategoriId,
+        'imageUrl': gorselUrl,
+      },
+    );
 
     return Urun.fromJson(yanit.data as Map<String, dynamic>);
+  }
+
+  /// Var olan ürünü günceller.
+  ///
+  /// Sunucu yalnızca gönderilen alanları değiştiriyor; form bütün alanları
+  /// dolu gönderdiği için burada da hepsi yollanıyor.
+  Future<Urun> guncelle({
+    required int id,
+    required String ad,
+    required String aciklama,
+    required String fiyat,
+    required int stok,
+    required int kategoriId,
+    String? gorselUrl,
+  }) async {
+    final yanit = await _istemci.dio.put(
+      '${ApiSabitleri.urunler}/$id',
+      data: {
+        'name': ad,
+        'description': aciklama,
+        'price': fiyat,
+        'stock': stok,
+        'categoryId': kategoriId,
+        'imageUrl': gorselUrl,
+      },
+    );
+
+    return Urun.fromJson(yanit.data as Map<String, dynamic>);
+  }
+
+  /// Ürünü satıştan kaldırır.
+  ///
+  /// Sunucuda kayıt gerçekten silinmiyor, `isActive` alanı `false` yapılıyor.
+  /// Geçmiş siparişler bu ürüne bağlı olduğu için gerçek silme veritabanı
+  /// kısıtı tarafından reddedilirdi.
+  Future<void> sil(int id) async {
+    await _istemci.dio.delete('${ApiSabitleri.urunler}/$id');
   }
 }

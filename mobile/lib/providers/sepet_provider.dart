@@ -33,6 +33,15 @@ class SepetProvider extends ChangeNotifier {
   /// kilitlenir; kullanıcı diğer satırlarla çalışmaya devam edebilir.
   int? _islemdekiUrunId;
 
+  /// Sepeti değiştiren isteklerin sırası.
+  ///
+  /// Yalnız ilgili satır kilitlendiği için aynı anda birden fazla satır için
+  /// istek uçabiliyor. Yanıtlar sırasız dönerse, eski isteğin sepeti yeni
+  /// isteğin sepetini ezip ekranda eksik adet gösteriyordu. Her istek kendi
+  /// sırasını taşır ve yalnız en sonuncusu sepeti yerine koyar.
+  /// `UrunProvider._istekSirasi` ile aynı çözüm.
+  int _istekSirasi = 0;
+
   Sepet get sepet => _sepet;
   bool get yukleniyor => _yukleniyor;
   String? get hata => _hata;
@@ -121,17 +130,28 @@ class SepetProvider extends ChangeNotifier {
   }
 
   Future<String?> _islem(int urunId, Future<Sepet> Function() cagri) async {
+    final sira = ++_istekSirasi;
+
     _islemdekiUrunId = urunId;
     notifyListeners();
 
     try {
-      _sepet = await cagri();
+      final gelen = await cagri();
+
+      // Bu istek beklerken başka bir satır için yenisi başlatılmışsa sonucu
+      // yok sayılır: sunucunun daha yeni yanıtı bu değişikliği de içeriyor,
+      // eskisini yazmak o satırın artışını ekrandan silerdi.
+      if (sira == _istekSirasi) _sepet = gelen;
 
       return null;
     } catch (hata) {
       return hataMesaji(hata);
     } finally {
-      _islemdekiUrunId = null;
+      // Kilidi yalnızca onu koyan istek açar. Koşulsuz `null` atansaydı,
+      // bu istek biterken başka bir satır için başlamış olan isteğin kilidi
+      // de kalkar ve o satır yanıtı gelmeden yeniden tıklanabilir olurdu.
+      if (_islemdekiUrunId == urunId) _islemdekiUrunId = null;
+
       notifyListeners();
     }
   }

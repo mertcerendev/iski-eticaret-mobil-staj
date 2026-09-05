@@ -132,6 +132,59 @@ class Dogrulayicilar {
     return null;
   }
 
+  // ── Yönetici ürün formu ────────────────────────────────────────────
+  // Kurallar `product.service.js` ile birebir aynı: ad 200, açıklama 2000
+  // karakter; fiyat en fazla iki ondalık basamaklı; stok negatif olamaz.
+
+  static String? urunAdi(String? deger) {
+    final metin = deger?.trim() ?? '';
+
+    if (metin.isEmpty) return 'Ürün adı zorunludur.';
+    if (metin.length > 200) return 'Ürün adı en fazla 200 karakter olabilir.';
+
+    return null;
+  }
+
+  static String? urunAciklamasi(String? deger) {
+    final metin = deger?.trim() ?? '';
+
+    if (metin.isEmpty) return 'Açıklama zorunludur.';
+    if (metin.length > 2000) {
+      return 'Açıklama en fazla 2000 karakter olabilir.';
+    }
+
+    return null;
+  }
+
+  /// Sunucu fiyatı metin olarak alıyor ve `^\d+(\.\d{1,2})?$` deseniyle
+  /// denetliyor. Aynı desen burada da uygulanıyor; virgül kabul edilmiyor
+  /// çünkü sunucuya nokta ile gitmesi gerekiyor.
+  static String? fiyat(String? deger) {
+    final metin = deger?.trim() ?? '';
+
+    if (metin.isEmpty) return 'Fiyat zorunludur.';
+
+    if (!RegExp(r'^\d+(\.\d{1,2})?$').hasMatch(metin)) {
+      return 'Fiyat 0 veya daha büyük, en fazla iki ondalıklı olmalıdır.';
+    }
+
+    return null;
+  }
+
+  static String? stok(String? deger) {
+    final metin = deger?.trim() ?? '';
+
+    if (metin.isEmpty) return 'Stok zorunludur.';
+
+    final sayi = int.tryParse(metin);
+
+    if (sayi == null || sayi < 0) {
+      return 'Stok 0 veya daha büyük bir tam sayı olmalıdır.';
+    }
+
+    return null;
+  }
+
   static String? kartSahibi(String? deger) {
     final metin = deger?.trim() ?? '';
 
