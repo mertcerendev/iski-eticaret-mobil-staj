@@ -3,7 +3,7 @@
 **Sunucu:** `http://localhost:3000`
 **Emulator'den:** `http://10.0.2.2:3000` (Gün 8'de mobil taraf bunu kullanacak)
 
-Toplam **27 uç**.
+Toplam **29 uç** (`/api/health` dâhil).
 
 ---
 
@@ -95,6 +95,20 @@ Yanıt `201`:
 `{ "email": ..., "password": ... }`
 
 Kullanıcı bulunamazsa da parola yanlışsa da **aynı mesaj** döner: `E-posta veya parola hatalı.` Farklı mesaj verilseydi sistemde kayıtlı e-postalar dışarıdan tespit edilebilirdi.
+
+### PATCH /api/auth/me
+
+`{ "fullName": "Ad Soyad" }` — 3-100 karakter. Token gerekli.
+
+**E-posta değiştirilemez.** Hem kimliğin kendisi hem giriş anahtarı; değişmesi benzersizlik denetimi, doğrulama postası ve oturum tazeleme gerektirirdi. Bu projenin kapsamı dışında tutuldu.
+
+### PATCH /api/auth/me/password
+
+`{ "currentPassword": ..., "newPassword": ... }` → **204** (gövde yok). Token gerekli.
+
+- **Mevcut parola da isteniyor:** oturumu ele geçiren biri parolayı tek başına değiştirip hesabı kilitleyemesin.
+- Yeni parola en az 8 karakter, eskisiyle aynı olamaz.
+- ⚠️ Hatalı mevcut parolada **400** döner, **401 değil.** Sebep: mobil istemcideki HTTP katmanı 401'i "oturum düştü" olarak yorumlayıp token'ı siliyor ve kullanıcıyı giriş ekranına atıyor. Burada oturum geçerli, hatalı olan yalnızca gövdedeki parola. 401 dönseydi kullanıcı parolasını bir kez yanlış yazdığında uygulamadan atılırdı.
 
 ---
 
