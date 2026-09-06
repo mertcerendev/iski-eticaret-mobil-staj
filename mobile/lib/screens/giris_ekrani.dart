@@ -125,20 +125,9 @@ class _GirisEkraniDurumu extends State<GirisEkrani> {
                 children: [
                   const SizedBox(height: 24),
 
-                  Icon(
-                    Icons.storefront,
-                    size: 72,
-                    color: Theme.of(context).colorScheme.primary,
-                  ),
-                  const SizedBox(height: 16),
-
-                  Text(
-                    'Nuvia',
-                    textAlign: TextAlign.center,
-                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
-                  ),
+                  // Logonun içinde marka adı da var; ayrıca yazıyla
+                  // tekrarlanmıyor.
+                  Image.asset('assets/marka/logo.png', width: 220),
                   const SizedBox(height: 8),
 
                   Text(

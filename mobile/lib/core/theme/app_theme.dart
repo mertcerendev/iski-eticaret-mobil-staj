@@ -7,7 +7,16 @@ import 'package:flutter/material.dart';
 class UygulamaTemasi {
   UygulamaTemasi._();
 
-  static const Color _cekirdekRenk = Color(0xFF1B4D8F);
+  /// Logodaki mor. Tema bu tohumdan üretiliyor: düğmeler, seçili durumlar
+  /// ve kategori daireleri buradan türeyen tonları alıyor.
+  static const Color _cekirdekRenk = Color(0xFF7259F9);
+
+  /// Logodaki lacivert. Başlık çubuğu ve marka zeminlerinde kullanılıyor.
+  ///
+  /// Mor başlık çubuğu, altındaki mor düğmelerle aynı ağırlığa gelip ekranı
+  /// tek renge boğuyordu. Logoda da mor lacivertin üzerinde duruyor; aynı
+  /// hiyerarşi arayüze taşındı.
+  static const Color lacivert = Color(0xFF0F1657);
 
   /// Fiyat, indirim ve dikkat çekmesi gereken rozetlerin rengi.
   ///
@@ -25,16 +34,22 @@ class UygulamaTemasi {
   static const Color zemin = Color(0xFFF2F4F7);
 
   static ThemeData get acik {
-    final renkSemasi = ColorScheme.fromSeed(seedColor: _cekirdekRenk);
+    // `primary` elle veriliyor: Material 3 tohumdan uyumlu ama daha soluk
+    // bir mor üretiyordu, logonun moru tanınmıyordu. Geri kalan roller
+    // (kap renkleri, hata, kenarlık) tohumdan geliyor.
+    final renkSemasi = ColorScheme.fromSeed(
+      seedColor: _cekirdekRenk,
+      primary: _cekirdekRenk,
+    );
 
     return ThemeData(
       colorScheme: renkSemasi,
       useMaterial3: true,
       scaffoldBackgroundColor: zemin,
 
-      appBarTheme: AppBarTheme(
-        backgroundColor: renkSemasi.primary,
-        foregroundColor: renkSemasi.onPrimary,
+      appBarTheme: const AppBarTheme(
+        backgroundColor: lacivert,
+        foregroundColor: Colors.white,
         elevation: 0,
         centerTitle: true,
       ),

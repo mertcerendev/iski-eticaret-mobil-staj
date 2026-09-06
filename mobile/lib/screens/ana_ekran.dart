@@ -322,46 +322,72 @@ class _Afis extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final tema = Theme.of(context);
-
-    return Container(
-      margin: const EdgeInsets.fromLTRB(12, 8, 12, 4),
-      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 18),
-      decoration: BoxDecoration(
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(12, 8, 12, 4),
+      child: ClipRRect(
         borderRadius: BorderRadius.circular(14),
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [tema.colorScheme.primary, const Color(0xFF2E6FBF)],
-        ),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Nuvia’ya hoş geldiniz',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 17,
-                    fontWeight: FontWeight.bold,
+        child: AspectRatio(
+          // Görsel bu oranda kırpılmış hâlde geliyor; kutu da aynı oranda
+          // veriliyor ki `cover` ile kenarlardan bir şey kesilmesin.
+          aspectRatio: 2.4,
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              Image.asset('assets/marka/afis.jpg', fit: BoxFit.cover),
+
+              // Görselin solu koyu ama düz değil, üstünde parıltılar var.
+              // Yazının her cihazda okunabilmesi için sol taraf ayrıca
+              // karartılıyor; sağdaki ürünler açıkta kalıyor.
+              DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.centerLeft,
+                    end: Alignment.centerRight,
+                    stops: const [0, 0.62],
+                    colors: [
+                      UygulamaTemasi.lacivert.withValues(alpha: 0.88),
+                      UygulamaTemasi.lacivert.withValues(alpha: 0),
+                    ],
                   ),
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  'Elektronikten spora altı kategoride ürün',
-                  style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.85),
-                    fontSize: 12.5,
+              ),
+
+              Align(
+                alignment: Alignment.centerLeft,
+                child: FractionallySizedBox(
+                  widthFactor: 0.55,
+                  child: Padding(
+                    padding: const EdgeInsets.only(left: 18),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Nuvia’ya hoş geldiniz',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            height: 1.2,
+                          ),
+                        ),
+                        const SizedBox(height: 5),
+                        Text(
+                          'Beş kategoride seçili ürünler',
+                          style: TextStyle(
+                            color: Colors.white.withValues(alpha: 0.85),
+                            fontSize: 11.5,
+                            height: 1.25,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
-          const Icon(Icons.storefront, color: Colors.white24, size: 52),
-        ],
+        ),
       ),
     );
   }
@@ -458,13 +484,16 @@ class _KategoriDugmesi extends StatelessWidget {
   Widget build(BuildContext context) {
     final tema = Theme.of(context);
 
-    // Seçili olan vurgu rengiyle doluyor. Yalnız yazıyı kalınlaştırmak
-    // yetmiyordu: göz önce daireleri tarıyor, hangisinin seçili olduğu bir
-    // bakışta anlaşılmalı.
+    // Seçili olan koyu marka moruyla doluyor, diğerleri soluk mor kalıyor.
+    // Yalnız yazıyı kalınlaştırmak yetmiyordu: göz önce daireleri tarıyor,
+    // hangisinin seçili olduğu bir bakışta anlaşılmalı.
+    //
+    // Turuncu kullanılmadı: o renk fiyat ve stok uyarısına ayrıldı. Seçili
+    // kategori de turuncu olsaydı renk tek bir şey anlatmaz olurdu.
     final zemin =
-        secili ? UygulamaTemasi.vurgu : tema.colorScheme.primaryContainer;
+        secili ? tema.colorScheme.primary : tema.colorScheme.primaryContainer;
     final onZemin =
-        secili ? Colors.white : tema.colorScheme.onPrimaryContainer;
+        secili ? tema.colorScheme.onPrimary : tema.colorScheme.onPrimaryContainer;
 
     return SizedBox(
       width: 66,
@@ -489,7 +518,7 @@ class _KategoriDugmesi extends StatelessWidget {
                 fontSize: 11,
                 height: 1.15,
                 fontWeight: secili ? FontWeight.w700 : FontWeight.normal,
-                color: secili ? UygulamaTemasi.vurgu : null,
+                color: secili ? tema.colorScheme.primary : null,
               ),
             ),
           ],
@@ -526,7 +555,7 @@ class _UrunSeridi extends StatelessWidget {
           padding: const EdgeInsets.fromLTRB(16, 14, 16, 8),
           child: Row(
             children: [
-              Icon(simge, size: 18, color: UygulamaTemasi.vurgu),
+              Icon(simge, size: 18, color: Theme.of(context).colorScheme.primary),
               const SizedBox(width: 7),
               Text(baslik, style: Theme.of(context).textTheme.titleMedium),
             ],

@@ -1,4 +1,22 @@
-# Ürün Görselleri — Kaynak ve Lisans
+# Görseller — Kaynak ve Lisans
+
+## Marka görselleri
+
+Logo, uygulama simgesi ve karşılama afişi **projeye özel** üretilmiştir;
+dışarıdan alınmamıştır. Uygulamada şu şekilde kullanılıyorlar:
+
+| Dosya | Nerede | Hazırlık |
+|---|---|---|
+| `mobile/assets/marka/logo.png` | Açılış ve giriş ekranı | Sunum sayfasından ana kilit kırpıldı, saydam zeminli |
+| `mobile/assets/marka/afis.jpg` | Ana sayfa karşılama afişi | 2.4:1 kırpıldı, 1200 piksel genişliğe indirildi |
+| `android/.../mipmap-*/ic_launcher*.png` | Telefonun başlatıcı ekranı | Beş yoğunluk için ölçeklendi; uyarlanır simge için mor "N" ayrı katmana ayrıldı |
+
+Marka renkleri: lacivert `#0F1657`, mor `#7259F9`. Uygulama teması bu iki
+renkten türetiliyor (`mobile/lib/core/theme/app_theme.dart`).
+
+---
+
+## Ürün görselleri
 
 Katalogdaki 16 ürün görseli **Wikimedia Commons**'tan alınmıştır. Commons
 seçilmesinin sebebi, her dosyanın lisansının açıkça belirtilmiş ve makine

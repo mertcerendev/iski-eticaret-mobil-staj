@@ -190,6 +190,17 @@ curl http://localhost:3000/api/health
 
 ---
 
+## Marka
+
+Logo, simge ve afiş `mobile/assets/marka/` altında; başlatıcı simgesi
+Android kaynaklarında (`mipmap-*`). Tema bu görsellerdeki lacivert
+`#0F1657` ve mor `#7259F9` üzerine kuruldu. Turuncu `#E8590C` yalnızca
+fiyat ve stok uyarısı için ayrıldı — bir renk tek bir şey anlatsın diye.
+
+Ayrıntı: [docs/gorsel-kaynaklari.md](docs/gorsel-kaynaklari.md)
+
+---
+
 ## Deneme hesapları
 
 Uygulama giriş istemeden açılıyor: ürünler, kategoriler ve arama misafir

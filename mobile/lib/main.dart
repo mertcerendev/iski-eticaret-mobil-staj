@@ -86,11 +86,7 @@ class _AcilisEkrani extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              Icons.storefront,
-              size: 72,
-              color: Theme.of(context).colorScheme.primary,
-            ),
+            Image.asset('assets/marka/logo.png', width: 200),
             const SizedBox(height: 24),
             const CircularProgressIndicator(),
           ],
