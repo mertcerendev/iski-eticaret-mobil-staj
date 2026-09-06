@@ -63,6 +63,20 @@ async function main() {
   });
   console.log(`Admin hazır: ${admin.email}`);
 
+  // Sunumda ikinci bir rol gösterilebilmesi için normal müşteri hesabı.
+  // Yönetici ekranlarının role göre gizlendiği ancak bu hesapla kanıtlanıyor.
+  const musteri = await prisma.user.upsert({
+    where:  { email: 'musteri@nuvia.com' },
+    update: {},
+    create: {
+      email:        'musteri@nuvia.com',
+      passwordHash: await bcrypt.hash('Musteri123!', 10),
+      fullName:     'Ayşe Yılmaz',
+      role:         'USER',
+    },
+  });
+  console.log(`Müşteri hazır: ${musteri.email}`);
+
   for (const kategori of kategoriler) {
     await prisma.category.upsert({
       where:  { slug: kategori.slug },

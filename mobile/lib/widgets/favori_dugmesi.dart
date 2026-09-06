@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../core/bildirim.dart';
 import '../models/urun.dart';
 import '../providers/favori_provider.dart';
+import '../screens/giris_ekrani.dart';
 
 /// Kalp düğmesi. Hem ürün kartında hem detay ekranında kullanılır.
 class FavoriDugmesi extends StatelessWidget {
@@ -19,6 +20,15 @@ class FavoriDugmesi extends StatelessWidget {
     // Bu bir StatelessWidget; `mounted` denetimi yok, bu yüzden bildirim
     // aracı `await`ten ÖNCE hazırlanıyor.
     final bildir = Bildirim(context);
+
+    // Favori ucu sunucuda oturum istiyor; misafir kullanıcı önce giriş
+    // ekranına yönlendiriliyor.
+    final girisVar = await oturumGerekli(
+      context,
+      'Beğendiğiniz ürünleri kaydetmek için hesabınıza giriş yapın.',
+    );
+
+    if (!girisVar || !context.mounted) return;
 
     final hata = await context.read<FavoriProvider>().degistir(urun);
 

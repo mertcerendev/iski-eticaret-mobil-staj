@@ -67,6 +67,14 @@ class SepetProvider extends ChangeNotifier {
     }
   }
 
+  /// Çıkış yapıldığında çağrılır. Sepet kullanıcıya ait olduğu için
+  /// bellekte bırakılmaz; alt gezinmedeki rozet de böylece sıfırlanır.
+  void temizle() {
+    _sepet = const Sepet.bos();
+    _hata = null;
+    notifyListeners();
+  }
+
   // Aşağıdaki üç işlem de aynı kalıbı izliyor: satırı kilitle, çağrıyı yap,
   // dönen sepeti yerine koy, kilidi aç. Tek fark hangi servis metodunun
   // çağrıldığı — o yüzden ortak gövde `_islem` içinde toplandı.

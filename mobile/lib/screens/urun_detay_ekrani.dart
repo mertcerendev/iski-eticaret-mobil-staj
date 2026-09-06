@@ -10,6 +10,7 @@ import '../providers/urun_provider.dart';
 import '../widgets/adet_secici.dart';
 import '../widgets/favori_dugmesi.dart';
 import '../widgets/urun_gorseli.dart';
+import 'giris_ekrani.dart';
 import 'urun_formu_ekrani.dart';
 
 class UrunDetayEkrani extends StatefulWidget {
@@ -46,6 +47,17 @@ class _UrunDetayEkraniDurumu extends State<UrunDetayEkrani> {
   /// sunucudan dönen yeni sepeti sakladığı için alt gezinmedeki rozet
   /// aynı anda güncelleniyor; ekranın rozeti ayrıca haberdar etmesi gerekmiyor.
   Future<void> _sepeteEkle() async {
+    // Sepet ucu sunucuda oturum istiyor; misafir önce giriş ekranına
+    // yönlendiriliyor.
+    if (!await oturumGerekli(
+      context,
+      'Ürünleri sepete eklemek için hesabınıza giriş yapın.',
+    )) {
+      return;
+    }
+
+    if (!mounted) return;
+
     final hata = await context.read<SepetProvider>().ekle(
       urunId: _urun.id,
       adet: _adet,

@@ -15,6 +15,10 @@ class YukleniyorGorunumu extends StatelessWidget {
 }
 
 class BosGorunumu extends StatelessWidget {
+  /// Boşluğun sebebini anlatan simge. Varsayılan "sonuç yok"; misafir
+  /// kullanıcıya gösterilen kapılı ekranlarda kilit veriliyor.
+  final IconData simge;
+
   final String baslik;
   final String? aciklama;
   final String? butonMetni;
@@ -22,6 +26,7 @@ class BosGorunumu extends StatelessWidget {
 
   const BosGorunumu({
     super.key,
+    this.simge = Icons.search_off,
     required this.baslik,
     this.aciklama,
     this.butonMetni,
@@ -36,7 +41,7 @@ class BosGorunumu extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.search_off, size: 64, color: Colors.grey.shade400),
+            Icon(simge, size: 64, color: Colors.grey.shade400),
             const SizedBox(height: 16),
             Text(
               baslik,

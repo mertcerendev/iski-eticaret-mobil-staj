@@ -7,6 +7,52 @@ import '../core/dogrulayicilar.dart';
 import '../providers/auth_provider.dart';
 import 'kayit_ekrani.dart';
 
+/// Giriş ekranını yığının üstüne açar.
+///
+/// Giriş artık uygulamanın kökü değil, gerektiğinde açılan bir ekran.
+/// Nereden çağrıldığını bilmek zorunda kalmasın diye bu iş tek bir
+/// yardımcıda toplandı.
+void girisEkraniniAc(BuildContext context) {
+  Navigator.of(context).push(
+    MaterialPageRoute(builder: (_) => const GirisEkrani()),
+  );
+}
+
+/// Hesap gerektiren işlemlerin önündeki kapı.
+///
+/// Sepet, favori ve sipariş uçları sunucuda `auth` katmanının arkasında.
+/// İstek atılıp 401 alınsaydı istemcideki interceptor bunu "oturum düştü"
+/// sayıp token'ı silerdi — hiç oturum açmamış biri için anlamsız bir yol.
+/// Bu yüzden istek atılmadan önce burada duruluyor.
+///
+/// Girişliyse `true` döner ve çağıran işine devam eder. Değilse kullanıcıya
+/// sorulur, `false` döner ve işlem iptal edilir.
+Future<bool> oturumGerekli(BuildContext context, String mesaj) async {
+  if (context.read<AuthProvider>().girisYapildi) return true;
+
+  final gidilsin = await showDialog<bool>(
+    context: context,
+    builder: (pencere) => AlertDialog(
+      title: const Text('Giriş gerekli'),
+      content: Text(mesaj),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(pencere).pop(false),
+          child: const Text('Vazgeç'),
+        ),
+        FilledButton(
+          onPressed: () => Navigator.of(pencere).pop(true),
+          child: const Text('Giriş Yap'),
+        ),
+      ],
+    ),
+  );
+
+  if (gidilsin == true && context.mounted) girisEkraniniAc(context);
+
+  return false;
+}
+
 class GirisEkrani extends StatefulWidget {
   const GirisEkrani({super.key});
 
@@ -36,6 +82,7 @@ class _GirisEkraniDurumu extends State<GirisEkrani> {
     if (!_formAnahtari.currentState!.validate()) return;
 
     final saglayici = context.read<AuthProvider>();
+    final yonlendirici = Navigator.of(context);
 
     final basarili = await saglayici.girisYap(
       eposta: _epostaDenetleyici.text.trim(),
@@ -47,10 +94,13 @@ class _GirisEkraniDurumu extends State<GirisEkrani> {
 
     if (!basarili) {
       Bildirim(context).hata(saglayici.hata ?? 'Giriş yapılamadı.');
+      return;
     }
 
-    // Başarılıysa yönlendirme yapılmaz: oturum durumu değişince
-    // `main.dart` içindeki sarmalayıcı ana ekranı kendisi açar.
+    // Bu ekrana kayıt ekranından da gelinmiş olabilir. `pop` yerine
+    // `popUntil` kullanılıyor: yığında ne varsa temizlenip kullanıcı
+    // gezindiği sekmeye geri bırakılıyor.
+    yonlendirici.popUntil((rota) => rota.isFirst);
   }
 
   @override
@@ -60,6 +110,10 @@ class _GirisEkraniDurumu extends State<GirisEkrani> {
     final islemSuruyor = context.watch<AuthProvider>().islemSuruyor;
 
     return Scaffold(
+      // Başlık çubuğu Gün 21'de eklendi: ekran artık uygulamanın kökü
+      // değil, üstüne açılan bir sayfa. Geri oku olmasa misafir kullanıcı
+      // vazgeçtiğinde ürünlere dönemezdi.
+      appBar: AppBar(title: const Text('Giriş Yap')),
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
@@ -88,7 +142,7 @@ class _GirisEkraniDurumu extends State<GirisEkrani> {
                   const SizedBox(height: 8),
 
                   Text(
-                    'Devam etmek için giriş yapın',
+                    'Sepet ve favoriler için hesabınıza girin',
                     textAlign: TextAlign.center,
                     style: TextStyle(color: Colors.grey.shade600),
                   ),

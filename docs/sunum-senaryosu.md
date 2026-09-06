@@ -22,9 +22,14 @@ Hazırlık:
 - Sepet **boş** bırakılmalı (dolu sepetle "sepete ekleme" gösterilemez)
 - En az bir favori olsun (favoriler sekmesi boş görünmesin)
 - En az üç geçmiş sipariş olsun
-- Uygulama giriş ekranında açık olsun (çıkış yapılarak)
+- Uygulama **çıkış yapılmış** hâlde olsun (misafir açılışı gösterilecek)
 
-Deneme hesabı: `admin@eticaret.com` / `Admin123!`
+Deneme hesapları:
+
+| Rol | E-posta | Parola |
+|---|---|---|
+| Yönetici | `admin@eticaret.com` | `Admin123!` |
+| Müşteri | `musteri@nuvia.com` | `Musteri123!` |
 
 ---
 
@@ -32,9 +37,13 @@ Deneme hesabı: `admin@eticaret.com` / `Admin123!`
 
 | Adım | Gösterilecek | Söylenecek |
 |---|---|---|
-| Giriş ekranı | Marka adı, iki alan | "Doğrulama hem burada hem sunucuda var. Buradaki hız için — kullanıcı hatayı sunucuya gitmeden görüyor. Asıl denetim sunucuda, çünkü istemci atlatılabilir." |
-| Boş alanla dene | Kırmızı uyarı | Sunucuya istek **gitmiyor** |
-| Giriş yap | Ana ekran açılır | "Giriş ekranı yönlendirme yapmıyor; oturum durumunu değiştiriyor, hangi ekranın açılacağına `main.dart` tek yerden karar veriyor." |
+| Uygulamayı aç | Doğrudan ürünler | "Ürün ve kategori uçları sunucuda herkese açık. Vitrini görmek için hesap istemek, mağazanın kapısına kilit takmak olurdu." |
+| Sepet sekmesi | Kilit simgesi, giriş çağrısı | "Sepet sunucuda kullanıcıya bağlı. İstek atılıp 401 alınsaydı istemci bunu 'oturum düştü' sayardı; o yüzden istek atılmadan önce duruluyor." |
+| Bir ürünün kalbine dokun | "Giriş gerekli" penceresi | Aynı kapı, tek yardımcıdan (`oturumGerekli`) geçiyor |
+| Boş alanla dene | Kırmızı uyarı | "Doğrulama hem burada hem sunucuda var. Buradaki hız için — kullanıcı hatayı sunucuya gitmeden görüyor. Asıl denetim sunucuda, çünkü istemci atlatılabilir." Sunucuya istek **gitmiyor** |
+| Müşteri hesabıyla gir | Gezinilen sekmeye dönülür | "Giriş artık uygulamanın kökü değil, üstüne açılan bir sayfa; başarınca kendini kapatıyor." |
+| Profil sekmesi | Ad, e-posta, siparişler | Yönetici bölümü **yok** |
+| Çıkış yap, yönetici ile gir | YÖNETİCİ rozeti, Sipariş Yönetimi, "Yeni Ürün" düğmesi | "Aynı ekran, farklı rol. Bu bir görünüm kolaylığı; asıl yetki denetimi sunucudaki `requireAdmin` katmanında." |
 
 ⭐ **Vurgu:** Uygulamayı kapatıp açtığında tekrar giriş istemiyor. Belirteç
 telefonun güvenli deposunda (Android Keystore) duruyor, açılışta sunucuya

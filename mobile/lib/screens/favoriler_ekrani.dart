@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../providers/auth_provider.dart';
 import '../providers/favori_provider.dart';
 import '../widgets/durum_gorunumleri.dart';
 import '../widgets/urun_karti.dart';
+import 'giris_ekrani.dart';
 import 'urun_detay_ekrani.dart';
 
 class FavorilerEkrani extends StatelessWidget {
@@ -24,6 +26,17 @@ class FavorilerEkrani extends StatelessWidget {
   }
 
   Widget _icerik(BuildContext context, FavoriProvider saglayici) {
+    // Misafirin favorisi olamaz: liste sunucuda kullanıcıya bağlı tutuluyor.
+    if (!context.watch<AuthProvider>().girisYapildi) {
+      return BosGorunumu(
+        simge: Icons.lock_outline,
+        baslik: 'Favorileriniz hesabınıza bağlı',
+        aciklama: 'Beğendiğiniz ürünleri kaydetmek için giriş yapın.',
+        butonMetni: 'Giriş Yap',
+        onButon: () => girisEkraniniAc(context),
+      );
+    }
+
     if (saglayici.yukleniyor && saglayici.favoriUrunler.isEmpty) {
       return const YukleniyorGorunumu();
     }

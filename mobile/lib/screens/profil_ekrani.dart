@@ -6,11 +6,15 @@ import '../providers/auth_provider.dart';
 import '../providers/favori_provider.dart';
 import '../providers/sepet_provider.dart';
 import '../widgets/durum_gorunumleri.dart';
+import 'giris_ekrani.dart';
+import 'kayit_ekrani.dart';
 import 'profil_duzenle_ekrani.dart';
 import 'siparislerim_ekrani.dart';
 import 'yonetici_siparisler_ekrani.dart';
 
-/// Giriş yapan kullanıcının bilgileri ve çıkış düğmesi.
+/// Hesap sekmesi. İçeriği oturum durumuna göre üç türlü çiziliyor:
+/// misafire giriş çağrısı, normal kullanıcıya kendi bilgileri ve
+/// siparişleri, yöneticiye ek olarak sipariş yönetimi bağlantısı.
 ///
 /// Çıkış Gün 10'a kadar ana sayfanın başlık çubuğundaydı. Alt gezinme
 /// gelince profil sekmesi açıldı ve çıkış oraya taşındı; hesapla ilgili
@@ -20,7 +24,8 @@ class ProfilEkrani extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final kullanici = context.watch<AuthProvider>().kullanici;
+    final oturum = context.watch<AuthProvider>();
+    final kullanici = oturum.kullanici;
 
     return Scaffold(
       appBar: AppBar(
@@ -39,7 +44,11 @@ class ProfilEkrani extends StatelessWidget {
         ],
       ),
       body: kullanici == null
-          ? const YukleniyorGorunumu()
+          // Oturum açıkken kullanıcı bilgisi henüz gelmemişse beklenir;
+          // oturum yoksa giriş çağrısı gösterilir.
+          ? (oturum.girisYapildi
+              ? const YukleniyorGorunumu()
+              : const _MisafirGorunumu())
           : ListView(
               padding: const EdgeInsets.all(16),
               children: [
@@ -125,6 +134,74 @@ class ProfilEkrani extends StatelessWidget {
     if (onay == true) {
       await saglayici.cikisYap();
     }
+  }
+}
+
+/// Giriş yapmamış kullanıcıya gösterilen bölüm.
+///
+/// Ürünler oturumsuz geziliyor ama sepet, favori ve sipariş hesaba bağlı.
+/// Bu ekran o sınırı anlatıyor ve iki yolu birden sunuyor.
+class _MisafirGorunumu extends StatelessWidget {
+  const _MisafirGorunumu();
+
+  @override
+  Widget build(BuildContext context) {
+    final tema = Theme.of(context);
+
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            CircleAvatar(
+              radius: 36,
+              backgroundColor: tema.colorScheme.primaryContainer,
+              child: Icon(
+                Icons.person_outline,
+                size: 36,
+                color: tema.colorScheme.onPrimaryContainer,
+              ),
+            ),
+            const SizedBox(height: 16),
+
+            const Text(
+              'Misafir olarak geziyorsunuz',
+              style: TextStyle(fontSize: 17, fontWeight: FontWeight.w600),
+            ),
+            const SizedBox(height: 8),
+
+            Text(
+              'Ürünleri hesapsız inceleyebilirsiniz. Sepet, favoriler ve '
+              'siparişler için giriş yapmanız gerekiyor.',
+              textAlign: TextAlign.center,
+              style: TextStyle(color: Colors.grey.shade600),
+            ),
+            const SizedBox(height: 24),
+
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton.icon(
+                onPressed: () => girisEkraniniAc(context),
+                icon: const Icon(Icons.login),
+                label: const Text('Giriş Yap'),
+              ),
+            ),
+            const SizedBox(height: 8),
+
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton(
+                onPressed: () => Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const KayitEkrani()),
+                ),
+                child: const Text('Kayıt Ol'),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
 

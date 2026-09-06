@@ -120,15 +120,31 @@ class _AnaEkraniDurumu extends State<AnaEkran> {
               child: _AramaKutusu(denetleyici: _aramaDenetleyici),
             ),
 
-            // ── Keşif bölümü ──────────────────────────────────────
-            if (saglayici.kesifGosterilsin) ...[
+            if (saglayici.kesifGosterilsin)
               const SliverToBoxAdapter(child: _Afis()),
-              SliverToBoxAdapter(
-                child: _KategoriSeridi(
-                  kategoriler: saglayici.kategoriler,
-                  onSecildi: saglayici.kategoriSec,
-                ),
+
+            // Kategori şeridi her iki kipte de duruyor.
+            //
+            // Önceden yalnızca keşif kipindeydi; bir kategoriye dokunulunca
+            // ekran arama kipine geçtiği için şerit kaybolup yerine düz
+            // yazılı çipler geliyordu. Kullanıcının seçim yaptığı anda
+            // dokunduğu yerin biçim değiştirmesi, üstelik komşu kategorilere
+            // geçmek için ikinci bir arayüzü öğrenmek zorunda kalması kötü
+            // bir davranıştı. Artık şerit yerinde kalıyor, seçili kategori
+            // üzerinde işaretleniyor.
+            SliverToBoxAdapter(
+              child: _KategoriSeridi(
+                kategoriler: saglayici.kategoriler,
+                seciliId: saglayici.seciliKategoriId,
+                onSecildi: saglayici.kategoriSec,
               ),
+            ),
+
+            // ── Keşif şeritleri ───────────────────────────────────
+            // Bunlar gizleniyor: kullanıcı arama ya da süzgeç uyguladığında
+            // ekran sonuçlara ayrılmalı, keşif içeriği sonuçları aşağı
+            // itmemeli.
+            if (saglayici.kesifGosterilsin) ...[
               SliverToBoxAdapter(
                 child: _UrunSeridi(
                   baslik: 'Yeni Gelenler',
@@ -147,10 +163,7 @@ class _AnaEkraniDurumu extends State<AnaEkran> {
                   onUrun: (urun) => _urunAc(urun, '$_heroOneki-uygun'),
                 ),
               ),
-            ] else
-              SliverToBoxAdapter(
-                child: _SuzgecCubugu(saglayici: saglayici),
-              ),
+            ],
 
             SliverToBoxAdapter(
               child: _BolumBasligi(saglayici: saglayici),
@@ -355,11 +368,19 @@ class _Afis extends StatelessWidget {
 }
 
 /// Kategori simgeleri şeridi.
+///
+/// Başındaki "Tümü" girişi seçimi kaldırıyor; süzgeci temizlemek için ayrı
+/// bir düğme aramaya gerek kalmıyor.
 class _KategoriSeridi extends StatelessWidget {
   final List<Kategori> kategoriler;
+  final int? seciliId;
   final ValueChanged<int?> onSecildi;
 
-  const _KategoriSeridi({required this.kategoriler, required this.onSecildi});
+  const _KategoriSeridi({
+    required this.kategoriler,
+    required this.seciliId,
+    required this.onSecildi,
+  });
 
   /// Kategori adına göre simge. Sunucuda simge alanı yok; eşleme burada
   /// yapılıyor, tanınmayan kategori genel bir simge alıyor.
@@ -386,51 +407,93 @@ class _KategoriSeridi extends StatelessWidget {
   Widget build(BuildContext context) {
     if (kategoriler.isEmpty) return const SizedBox(height: 8);
 
-    final tema = Theme.of(context);
-
     return SizedBox(
       height: 96,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.fromLTRB(12, 10, 12, 6),
-        itemCount: kategoriler.length,
+
+        // Bir fazlası baştaki "Tümü" girişi.
+        itemCount: kategoriler.length + 1,
         separatorBuilder: (_, _) => const SizedBox(width: 14),
         itemBuilder: (context, sira) {
-          final kategori = kategoriler[sira];
+          if (sira == 0) {
+            return _KategoriDugmesi(
+              ad: 'Tümü',
+              simge: Icons.apps,
+              secili: seciliId == null,
+              onTap: () => onSecildi(null),
+            );
+          }
 
-          return SizedBox(
-            width: 66,
-            child: InkWell(
-              borderRadius: BorderRadius.circular(10),
-              onTap: () => onSecildi(kategori.id),
-              child: Column(
-                children: [
-                  Container(
-                    width: 52,
-                    height: 52,
-                    decoration: BoxDecoration(
-                      color: tema.colorScheme.primaryContainer,
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(
-                      _simge(kategori.ad),
-                      color: tema.colorScheme.onPrimaryContainer,
-                      size: 25,
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    kategori.ad,
-                    maxLines: 2,
-                    textAlign: TextAlign.center,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(fontSize: 11, height: 1.15),
-                  ),
-                ],
-              ),
-            ),
+          final kategori = kategoriler[sira - 1];
+
+          return _KategoriDugmesi(
+            ad: kategori.ad,
+            simge: _simge(kategori.ad),
+            secili: seciliId == kategori.id,
+            onTap: () => onSecildi(kategori.id),
           );
         },
+      ),
+    );
+  }
+}
+
+/// Şeritteki tek kategori: yuvarlak simge ve altında adı.
+class _KategoriDugmesi extends StatelessWidget {
+  final String ad;
+  final IconData simge;
+  final bool secili;
+  final VoidCallback onTap;
+
+  const _KategoriDugmesi({
+    required this.ad,
+    required this.simge,
+    required this.secili,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final tema = Theme.of(context);
+
+    // Seçili olan vurgu rengiyle doluyor. Yalnız yazıyı kalınlaştırmak
+    // yetmiyordu: göz önce daireleri tarıyor, hangisinin seçili olduğu bir
+    // bakışta anlaşılmalı.
+    final zemin =
+        secili ? UygulamaTemasi.vurgu : tema.colorScheme.primaryContainer;
+    final onZemin =
+        secili ? Colors.white : tema.colorScheme.onPrimaryContainer;
+
+    return SizedBox(
+      width: 66,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(10),
+        onTap: onTap,
+        child: Column(
+          children: [
+            Container(
+              width: 52,
+              height: 52,
+              decoration: BoxDecoration(color: zemin, shape: BoxShape.circle),
+              child: Icon(simge, color: onZemin, size: 25),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              ad,
+              maxLines: 2,
+              textAlign: TextAlign.center,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: 11,
+                height: 1.15,
+                fontWeight: secili ? FontWeight.w700 : FontWeight.normal,
+                color: secili ? UygulamaTemasi.vurgu : null,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -492,44 +555,6 @@ class _UrunSeridi extends StatelessWidget {
           ),
         ),
       ],
-    );
-  }
-}
-
-/// Arama kipinde görünen kategori ve sıralama çubuğu.
-class _SuzgecCubugu extends StatelessWidget {
-  final UrunProvider saglayici;
-
-  const _SuzgecCubugu({required this.saglayici});
-
-  @override
-  Widget build(BuildContext context) {
-    if (saglayici.kategoriler.isEmpty) return const SizedBox(height: 4);
-
-    return SizedBox(
-      height: 46,
-      child: ListView(
-        scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
-        children: [
-          FilterChip(
-            label: const Text('Tümü'),
-            selected: saglayici.seciliKategoriId == null,
-            onSelected: (_) => saglayici.kategoriSec(null),
-          ),
-          const SizedBox(width: 8),
-
-          for (final kategori in saglayici.kategoriler) ...[
-            FilterChip(
-              label: Text(kategori.ad),
-              selected: saglayici.seciliKategoriId == kategori.id,
-              onSelected: (secildi) =>
-                  saglayici.kategoriSec(secildi ? kategori.id : null),
-            ),
-            const SizedBox(width: 8),
-          ],
-        ],
-      ),
     );
   }
 }

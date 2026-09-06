@@ -9,7 +9,6 @@ import 'providers/siparis_provider.dart';
 import 'providers/urun_provider.dart';
 import 'providers/yonetici_siparis_provider.dart';
 import 'screens/ana_kabuk.dart';
-import 'screens/giris_ekrani.dart';
 
 void main() {
   runApp(const UygulamaKoku());
@@ -52,10 +51,15 @@ class UygulamaKoku extends StatelessWidget {
   }
 }
 
-/// Oturum durumuna göre hangi ekranın açılacağına karar verir.
+/// Açılışta kayıtlı token denetlenirken karşılama ekranını, denetim
+/// bitince uygulamayı gösterir.
 ///
-/// Giriş ve kayıt ekranları başarı sonrası elle yönlendirme yapmaz;
-/// durumu değiştirirler, karar tek yerde — burada — verilir.
+/// **Gün 21'de değişti.** Önceden oturum yoksa doğrudan giriş ekranı
+/// açılıyordu. Oysa ürün ve kategori uçları sunucuda herkese açık:
+/// vitrini görmek için hesap istemek, mağazanın kapısına kilit takmak
+/// gibiydi. Artık uygulama her hâlükârda ürünlerle açılıyor; giriş
+/// yalnızca sepet, favori ve sipariş gibi hesaba bağlı işlemlerde
+/// isteniyor.
 class OturumKapisi extends StatelessWidget {
   const OturumKapisi({super.key});
 
@@ -63,17 +67,12 @@ class OturumKapisi extends StatelessWidget {
   Widget build(BuildContext context) {
     final durum = context.watch<AuthProvider>().durum;
 
-    switch (durum) {
-      // Açılışta kayıtlı token sunucuya sorulurken kısa bir bekleme olur.
-      case OturumDurumu.kontrolEdiliyor:
-        return const _AcilisEkrani();
+    // Bekleme kısa: kayıtlı token varsa sunucuya bir istek atılıyor.
+    // Bu sırada ürün listesi gösterilseydi, oturum açık çıktığında
+    // ekran bir kez daha kurulurdu.
+    if (durum == OturumDurumu.kontrolEdiliyor) return const _AcilisEkrani();
 
-      case OturumDurumu.cikisYapildi:
-        return const GirisEkrani();
-
-      case OturumDurumu.girisYapildi:
-        return const AnaKabuk();
-    }
+    return const AnaKabuk();
   }
 }
 

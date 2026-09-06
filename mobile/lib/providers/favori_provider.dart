@@ -50,6 +50,18 @@ class FavoriProvider extends ChangeNotifier {
     }
   }
 
+  /// Çıkış yapıldığında çağrılır.
+  ///
+  /// Şart: veriler kullanıcıya ait. Temizlenmezse çıkış yapan kişinin
+  /// favorileri ekranda kalır, kartlardaki kalpler dolu görünür ve
+  /// ardından giriş yapan başka biri onları kendi favorisi sanır.
+  void temizle() {
+    _favoriIdleri.clear();
+    _favoriUrunler.clear();
+    _hata = null;
+    notifyListeners();
+  }
+
   /// Favori durumunu tersine çevirir.
   ///
   /// **İyimser güncelleme (optimistic UI):** kalp, sunucunun yanıtı

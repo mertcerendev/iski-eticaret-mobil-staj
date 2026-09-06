@@ -190,15 +190,20 @@ curl http://localhost:3000/api/health
 
 ---
 
-## Deneme hesabı
+## Deneme hesapları
 
-```
-E-posta : admin@eticaret.com
-Parola  : Admin123!
-```
+Uygulama giriş istemeden açılıyor: ürünler, kategoriler ve arama misafir
+olarak kullanılabiliyor. Sepet, favoriler ve siparişler hesaba bağlı —
+bunlara dokunulduğunda giriş ekranı açılıyor.
 
-Bu hesabın rolü `ADMIN`; yönetici bölümleri yalnızca onda görünür. Normal
-kullanıcı akışını denemek için uygulamadan yeni bir hesap açılabilir.
+| Rol | E-posta | Parola |
+|---|---|---|
+| Yönetici | `admin@eticaret.com` | `Admin123!` |
+| Müşteri | `musteri@nuvia.com` | `Musteri123!` |
+
+İkisi de `prisma/seed.js` tarafından oluşturuluyor. Yönetici bölümleri
+(ürün ekleme, sipariş yönetimi) yalnızca birincisinde görünür; ikisi arasında
+geçiş yapılarak rol denetimi gösterilebilir.
 
 ---
 

@@ -4,10 +4,12 @@ import 'package:provider/provider.dart';
 import '../core/bildirim.dart';
 import '../core/theme/app_theme.dart';
 import '../models/sepet.dart';
+import '../providers/auth_provider.dart';
 import '../providers/sepet_provider.dart';
 import '../widgets/adet_secici.dart';
 import '../widgets/durum_gorunumleri.dart';
 import '../widgets/urun_gorseli.dart';
+import 'giris_ekrani.dart';
 import 'odeme_ekrani.dart';
 
 class SepetEkrani extends StatelessWidget {
@@ -36,6 +38,17 @@ class SepetEkrani extends StatelessWidget {
   }
 
   Widget _icerik(BuildContext context, SepetProvider saglayici) {
+    // Sepet sunucuda kullanıcıya bağlı; misafirin sepeti tutulmuyor.
+    if (!context.watch<AuthProvider>().girisYapildi) {
+      return BosGorunumu(
+        simge: Icons.lock_outline,
+        baslik: 'Sepetiniz hesabınıza bağlı',
+        aciklama: 'Ürünleri sepete eklemek için giriş yapın.',
+        butonMetni: 'Giriş Yap',
+        onButon: () => girisEkraniniAc(context),
+      );
+    }
+
     if (saglayici.yukleniyor && saglayici.sepet.bosMu) {
       return const YukleniyorGorunumu();
     }

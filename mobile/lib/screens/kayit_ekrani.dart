@@ -47,9 +47,10 @@ class _KayitEkraniDurumu extends State<KayitEkrani> {
 
     if (basarili) {
       // Kayıt başarılı: sunucu token de döndürdüğü için kullanıcı zaten
-      // giriş yapmış sayılır. Bu ekran yığından çıkarılır, ana ekranı
-      // `main.dart` içindeki sarmalayıcı açar.
-      yonlendirici.pop();
+      // giriş yapmış sayılır. Altta giriş ekranı da durabileceğinden tek
+      // `pop` yetmez; yığın kökene kadar temizlenip kullanıcı gezindiği
+      // sekmeye bırakılıyor.
+      yonlendirici.popUntil((rota) => rota.isFirst);
       return;
     }
 
