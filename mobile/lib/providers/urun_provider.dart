@@ -274,7 +274,10 @@ class UrunProvider extends ChangeNotifier {
   // ölçütleri sunucuda uygulandığı için ürünün listede nereye gireceğini
   // istemci bilemez.
 
-  Future<String?> urunEkle({
+  /// [id] boşsa ürün ekler, doluysa günceller. Formdaki "düzenleme mi"
+  /// ayrımı zaten bu tek alanla yapılıyor.
+  Future<String?> urunKaydet({
+    int? id,
     required String ad,
     required String aciklama,
     required String fiyat,
@@ -283,28 +286,7 @@ class UrunProvider extends ChangeNotifier {
     String? gorselUrl,
   }) {
     return _yoneticiIslem(
-      () => _urunServisi.olustur(
-        ad: ad,
-        aciklama: aciklama,
-        fiyat: fiyat,
-        stok: stok,
-        kategoriId: kategoriId,
-        gorselUrl: gorselUrl,
-      ),
-    );
-  }
-
-  Future<String?> urunGuncelle({
-    required int id,
-    required String ad,
-    required String aciklama,
-    required String fiyat,
-    required int stok,
-    required int kategoriId,
-    String? gorselUrl,
-  }) {
-    return _yoneticiIslem(
-      () => _urunServisi.guncelle(
+      () => _urunServisi.kaydet(
         id: id,
         ad: ad,
         aciklama: aciklama,

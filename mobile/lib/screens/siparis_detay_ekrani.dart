@@ -5,6 +5,7 @@ import '../core/bildirim.dart';
 import '../core/theme/app_theme.dart';
 import '../models/siparis.dart';
 import '../providers/siparis_provider.dart';
+import '../widgets/bilgi_karti.dart';
 import '../widgets/durum_gorunumleri.dart';
 import '../widgets/siparis_durum_rozeti.dart';
 import '../widgets/urun_gorseli.dart';
@@ -66,7 +67,7 @@ class _Govde extends StatelessWidget {
           _BaslikKarti(siparis: siparis),
           const SizedBox(height: 14),
 
-          _BilgiKarti(
+          BilgiKarti(
             baslik: 'Teslimat Adresi',
             simge: Icons.local_shipping_outlined,
             child: Text(
@@ -76,7 +77,7 @@ class _Govde extends StatelessWidget {
           ),
           const SizedBox(height: 14),
 
-          _BilgiKarti(
+          BilgiKarti(
             baslik: 'Ödeme',
             simge: Icons.credit_card,
             child: Column(
@@ -95,7 +96,7 @@ class _Govde extends StatelessWidget {
           ),
           const SizedBox(height: 14),
 
-          _BilgiKarti(
+          BilgiKarti(
             baslik: 'Ürünler (${siparis.toplamAdet} adet)',
             simge: Icons.inventory_2_outlined,
             child: Column(
@@ -187,54 +188,6 @@ class _BaslikKarti extends StatelessWidget {
     );
   }
 }
-
-/// Başlık, simge ve serbest içerikten oluşan ortak kart kabuğu.
-/// Detaydaki üç bölüm de aynı düzeni kullanıyor.
-class _BilgiKarti extends StatelessWidget {
-  final String baslik;
-  final IconData simge;
-  final Widget child;
-
-  const _BilgiKarti({
-    required this.baslik,
-    required this.simge,
-    required this.child,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(
-                  simge,
-                  size: 18,
-                  color: Theme.of(context).colorScheme.primary,
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  baslik,
-                  style: const TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 10),
-            child,
-          ],
-        ),
-      ),
-    );
-  }
-}
-
 class _KalemSatiri extends StatelessWidget {
   final SiparisKalemi kalem;
 

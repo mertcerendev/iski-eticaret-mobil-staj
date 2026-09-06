@@ -66,37 +66,16 @@ class UrunServisi {
   // Üç uç da sunucuda `requireAdmin` ile korunuyor. İstemci tarafında
   // düğmeleri gizlemek yalnızca görünüm kolaylığı; asıl denetim sunucuda.
 
-  /// Yeni ürün ekler. Fiyat sunucuya **metin** olarak gidiyor: `Decimal`
-  /// alanına yazılırken kuruş hassasiyeti kaybolmasın diye.
-  Future<Urun> olustur({
-    required String ad,
-    required String aciklama,
-    required String fiyat,
-    required int stok,
-    required int kategoriId,
-    String? gorselUrl,
-  }) async {
-    final yanit = await _istemci.dio.post(
-      ApiSabitleri.urunler,
-      data: {
-        'name': ad,
-        'description': aciklama,
-        'price': fiyat,
-        'stock': stok,
-        'categoryId': kategoriId,
-        'imageUrl': gorselUrl,
-      },
-    );
-
-    return Urun.fromJson(yanit.data as Map<String, dynamic>);
-  }
-
-  /// Var olan ürünü günceller.
+  /// Ürünü kaydeder: [id] boşsa yeni kayıt açar, doluysa onu günceller.
   ///
-  /// Sunucu yalnızca gönderilen alanları değiştiriyor; form bütün alanları
-  /// dolu gönderdiği için burada da hepsi yollanıyor.
-  Future<Urun> guncelle({
-    required int id,
+  /// İkisi birebir aynı gövdeyi gönderiyordu; ayrı yazıldıklarında alan
+  /// listesi iki yerde tekrar ediyor, birine eklenen alan diğerinde
+  /// unutulabiliyordu. Tek fark HTTP metodu ve adres.
+  ///
+  /// Fiyat sunucuya **metin** olarak gidiyor: `Decimal` alanına yazılırken
+  /// kuruş hassasiyeti kaybolmasın diye.
+  Future<Urun> kaydet({
+    int? id,
     required String ad,
     required String aciklama,
     required String fiyat,
@@ -104,17 +83,18 @@ class UrunServisi {
     required int kategoriId,
     String? gorselUrl,
   }) async {
-    final yanit = await _istemci.dio.put(
-      '${ApiSabitleri.urunler}/$id',
-      data: {
-        'name': ad,
-        'description': aciklama,
-        'price': fiyat,
-        'stock': stok,
-        'categoryId': kategoriId,
-        'imageUrl': gorselUrl,
-      },
-    );
+    final govde = {
+      'name': ad,
+      'description': aciklama,
+      'price': fiyat,
+      'stock': stok,
+      'categoryId': kategoriId,
+      'imageUrl': gorselUrl,
+    };
+
+    final yanit = id == null
+        ? await _istemci.dio.post(ApiSabitleri.urunler, data: govde)
+        : await _istemci.dio.put('${ApiSabitleri.urunler}/$id', data: govde);
 
     return Urun.fromJson(yanit.data as Map<String, dynamic>);
   }

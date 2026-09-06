@@ -5,6 +5,7 @@ import '../core/bildirim.dart';
 import '../core/dogrulayicilar.dart';
 import '../models/kullanici.dart';
 import '../providers/auth_provider.dart';
+import '../widgets/bilgi_karti.dart';
 
 /// Kullanıcının kendi bilgilerini düzenlediği ekran.
 ///
@@ -115,7 +116,7 @@ class _AdSoyadBolumuDurumu extends State<_AdSoyadBolumu> {
   Widget build(BuildContext context) {
     final islemSuruyor = context.watch<AuthProvider>().islemSuruyor;
 
-    return _Bolum(
+    return BilgiKarti(
       baslik: 'Ad Soyad',
       simge: Icons.person_outline,
       child: Form(
@@ -192,7 +193,7 @@ class _ParolaBolumuDurumu extends State<_ParolaBolumu> {
   Widget build(BuildContext context) {
     final islemSuruyor = context.watch<AuthProvider>().islemSuruyor;
 
-    return _Bolum(
+    return BilgiKarti(
       baslik: 'Parola Değiştir',
       simge: Icons.lock_outline,
       child: Form(
@@ -243,52 +244,6 @@ class _ParolaBolumuDurumu extends State<_ParolaBolumu> {
               onPressed: islemSuruyor ? null : _degistir,
               child: const Text('Parolayı Değiştir'),
             ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-/// Başlıklı kart kabuğu; iki bölüm de aynı düzeni kullanıyor.
-class _Bolum extends StatelessWidget {
-  final String baslik;
-  final IconData simge;
-  final Widget child;
-
-  const _Bolum({
-    required this.baslik,
-    required this.simge,
-    required this.child,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(
-                  simge,
-                  size: 18,
-                  color: Theme.of(context).colorScheme.primary,
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  baslik,
-                  style: const TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 14),
-            child,
           ],
         ),
       ),

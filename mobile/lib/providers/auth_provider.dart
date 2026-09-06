@@ -90,20 +90,10 @@ class AuthProvider extends ChangeNotifier {
   ///
   /// Hata mesajını döndürür, hata yoksa `null`. Ekran nasıl göstereceğine
   /// kendisi karar verir.
-  Future<String?> profilGuncelle(String adSoyad) async {
-    _islemSuruyor = true;
-    notifyListeners();
-
-    try {
+  Future<String?> profilGuncelle(String adSoyad) {
+    return _islem(() async {
       _kullanici = await _servis.profilGuncelle(adSoyad);
-
-      return null;
-    } catch (hata) {
-      return hataMesaji(hata);
-    } finally {
-      _islemSuruyor = false;
-      notifyListeners();
-    }
+    });
   }
 
   /// Parolayı değiştirir.
@@ -113,15 +103,24 @@ class AuthProvider extends ChangeNotifier {
   Future<String?> parolaDegistir({
     required String mevcutParola,
     required String yeniParola,
-  }) async {
+  }) {
+    return _islem(
+      () => _servis.parolaDegistir(
+        mevcutParola: mevcutParola,
+        yeniParola: yeniParola,
+      ),
+    );
+  }
+
+  /// Profil ve parola işlemlerinin ortak gövdesi: işaretle, çağır, hata
+  /// mesajını döndür, işareti kaldır. Tek fark hangi servis metodunun
+  /// çağrıldığı. `_oturumAc` ile aynı kalıp.
+  Future<String?> _islem(Future<void> Function() cagri) async {
     _islemSuruyor = true;
     notifyListeners();
 
     try {
-      await _servis.parolaDegistir(
-        mevcutParola: mevcutParola,
-        yeniParola: yeniParola,
-      );
+      await cagri();
 
       return null;
     } catch (hata) {

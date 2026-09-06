@@ -151,26 +151,16 @@ class _UrunFormuEkraniDurumu extends State<UrunFormuEkrani> {
     final yonlendirici = Navigator.of(context);
     final bildir = Bildirim(context);
 
-    final urun = widget.urun;
-
-    final hata = urun == null
-        ? await saglayici.urunEkle(
-            ad: _ad.text.trim(),
-            aciklama: _aciklama.text.trim(),
-            fiyat: _fiyat.text.trim(),
-            stok: int.parse(_stok.text.trim()),
-            kategoriId: _kategoriId!,
-            gorselUrl: _gorselUrl,
-          )
-        : await saglayici.urunGuncelle(
-            id: urun.id,
-            ad: _ad.text.trim(),
-            aciklama: _aciklama.text.trim(),
-            fiyat: _fiyat.text.trim(),
-            stok: int.parse(_stok.text.trim()),
-            kategoriId: _kategoriId!,
-            gorselUrl: _gorselUrl,
-          );
+    // Kimlik boşsa sağlayıcı ekleme, doluysa güncelleme yapıyor.
+    final hata = await saglayici.urunKaydet(
+      id: widget.urun?.id,
+      ad: _ad.text.trim(),
+      aciklama: _aciklama.text.trim(),
+      fiyat: _fiyat.text.trim(),
+      stok: int.parse(_stok.text.trim()),
+      kategoriId: _kategoriId!,
+      gorselUrl: _gorselUrl,
+    );
 
     if (!mounted) return;
 

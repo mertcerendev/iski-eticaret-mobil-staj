@@ -123,7 +123,9 @@ class _AnaEkraniDurumu extends State<AnaEkran> {
             ),
 
             if (saglayici.kesifGosterilsin)
-              const SliverToBoxAdapter(child: _Afis()),
+              SliverToBoxAdapter(
+                child: _Afis(kategoriAdedi: saglayici.kategoriler.length),
+              ),
 
             // Kategori şeridi her iki kipte de duruyor.
             //
@@ -168,7 +170,7 @@ class _AnaEkraniDurumu extends State<AnaEkran> {
             ],
 
             SliverToBoxAdapter(
-              child: _BolumBasligi(saglayici: saglayici),
+              child: _UrunlerBasligi(saglayici: saglayici),
             ),
 
             ..._icerikSliverlari(saglayici),
@@ -320,7 +322,14 @@ class _AramaKutusu extends StatelessWidget {
 /// Kampanya ya da indirim yazmıyor: sunucuda böyle bir veri yok, uydurulmuş
 /// bir kampanya sunumda savunulamazdı. Afiş marka kimliğini taşıyor.
 class _Afis extends StatelessWidget {
-  const _Afis();
+  /// Kaç kategori olduğu sunucudan geliyor.
+  ///
+  /// Önce metne elle yazılmıştı ve yanlıştı: seed dosyasında beş kategori
+  /// var ama veritabanına sonradan bir tane daha eklenmiş. Sayının tek
+  /// doğru kaynağı listenin kendisi.
+  final int kategoriAdedi;
+
+  const _Afis({required this.kategoriAdedi});
 
   @override
   Widget build(BuildContext context) {
@@ -375,7 +384,7 @@ class _Afis extends StatelessWidget {
                         ),
                         const SizedBox(height: 5),
                         Text(
-                          'Beş kategoride seçili ürünler',
+                          '$kategoriAdedi kategoride seçili ürünler',
                           style: TextStyle(
                             color: Colors.white.withValues(alpha: 0.85),
                             fontSize: 11.5,
@@ -591,10 +600,13 @@ class _UrunSeridi extends StatelessWidget {
 }
 
 /// "Tüm Ürünler" başlığı, sonuç sayısı ve sıralama menüsü.
-class _BolumBasligi extends StatelessWidget {
+///
+/// Paylaşılan `BolumBasligi` ile ilgisi yok; burada başlığın yanında
+/// sonuç sayısı ve sıralama menüsü de var.
+class _UrunlerBasligi extends StatelessWidget {
   final UrunProvider saglayici;
 
-  const _BolumBasligi({required this.saglayici});
+  const _UrunlerBasligi({required this.saglayici});
 
   @override
   Widget build(BuildContext context) {

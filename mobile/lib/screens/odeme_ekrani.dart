@@ -8,6 +8,7 @@ import '../core/dogrulayicilar.dart';
 import '../core/kart_bicimlendiriciler.dart';
 import '../providers/sepet_provider.dart';
 import '../providers/urun_provider.dart';
+import '../widgets/bilgi_karti.dart';
 import 'siparis_basarili_ekrani.dart';
 
 /// Teslimat adresi ve ödeme bilgisinin girildiği ekran.
@@ -102,7 +103,7 @@ class _OdemeEkraniDurumu extends State<OdemeEkrani> {
             ),
             const SizedBox(height: 20),
 
-            const _BolumBasligi(simge: Icons.local_shipping_outlined, baslik: 'Teslimat Adresi'),
+            const BolumBasligi(simge: Icons.local_shipping_outlined, baslik: 'Teslimat Adresi'),
             const SizedBox(height: 10),
             TextFormField(
               controller: _adres,
@@ -116,7 +117,7 @@ class _OdemeEkraniDurumu extends State<OdemeEkrani> {
             ),
             const SizedBox(height: 12),
 
-            const _BolumBasligi(simge: Icons.credit_card, baslik: 'Kart Bilgileri'),
+            const BolumBasligi(simge: Icons.credit_card, baslik: 'Kart Bilgileri'),
             const SizedBox(height: 10),
 
             TextFormField(
@@ -266,28 +267,6 @@ class _OzetKarti extends StatelessWidget {
     );
   }
 }
-
-class _BolumBasligi extends StatelessWidget {
-  final IconData simge;
-  final String baslik;
-
-  const _BolumBasligi({required this.simge, required this.baslik});
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Icon(simge, size: 18, color: Theme.of(context).colorScheme.primary),
-        const SizedBox(width: 8),
-        Text(
-          baslik,
-          style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
-        ),
-      ],
-    );
-  }
-}
-
 class _SimulasyonUyarisi extends StatelessWidget {
   const _SimulasyonUyarisi();
 
