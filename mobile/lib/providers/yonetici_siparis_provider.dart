@@ -18,7 +18,20 @@ class YoneticiSiparisProvider extends ChangeNotifier {
   final List<Siparis> _siparisler = [];
 
   bool _yukleniyor = false;
+
+  /// Sonraki sayfa isteği sürerken doğru.
+  ///
+  /// Tam yükleme ile aynı bayrak kullanılamıyor: sayfalama bayrağı erken
+  /// sıfırlanınca tazeleme sürerken yeni sayfa isteği başlayabiliyordu.
+  bool _dahaYukleniyor = false;
+
   String? _hata;
+
+  /// Yarışan isteklerin sonucunu ayırt eder. Süzgeç değiştirildiğinde ya da
+  /// liste tazelendiğinde uçmakta olan sayfalama isteğinin geç dönen yanıtı
+  /// yeni listenin altına eklenmesin diye her istek kendi sırasını taşır.
+  /// `UrunProvider._istekSirasi` ile aynı çözüm.
+  int _istekSirasi = 0;
 
   /// Seçili durum süzgeci; boşsa bütün siparişler geliyor.
   SiparisDurumu? _durumSuzgeci;
@@ -41,7 +54,20 @@ class YoneticiSiparisProvider extends ChangeNotifier {
 
   bool guncelleniyorMu(int id) => _guncellenenId == id;
 
+  /// Çıkış yapıldığında çağrılır; liste bir sonraki yöneticiye taşınmasın.
+  void temizle() {
+    _siparisler.clear();
+    _durumSuzgeci = null;
+    _sayfa = 1;
+    _toplamSayfa = 1;
+    _toplam = 0;
+    _hata = null;
+    notifyListeners();
+  }
+
   Future<void> yukle() async {
+    final sira = ++_istekSirasi;
+
     _yukleniyor = true;
     _hata = null;
     notifyListeners();
@@ -53,6 +79,9 @@ class YoneticiSiparisProvider extends ChangeNotifier {
         limit: _sayfaBoyutu,
       );
 
+      // Bu istek beklerken yenisi başlatılmışsa sonucu yok sayılır.
+      if (sira != _istekSirasi) return;
+
       _siparisler
         ..clear()
         ..addAll(sonuc.kayitlar);
@@ -61,9 +90,15 @@ class YoneticiSiparisProvider extends ChangeNotifier {
       _toplamSayfa = sonuc.toplamSayfa;
       _toplam = sonuc.toplam;
     } catch (hata) {
+      if (sira != _istekSirasi) return;
+
       _hata = hataMesaji(hata);
       _siparisler.clear();
     } finally {
+      // Bayrak koşulsuz sıfırlanıyor: `sira` denetimine bağlanırsa, araya
+      // yeni bir istek girdiğinde koşul tutmaz ve bayrak sonsuza kadar
+      // `true` kalır. `UrunProvider.dahaFazlaYukle` içinde yaşanan tuzağın
+      // aynısı.
       _yukleniyor = false;
       notifyListeners();
     }
@@ -71,9 +106,13 @@ class YoneticiSiparisProvider extends ChangeNotifier {
 
   /// Sonraki sayfayı getirip eldekilerin üzerine ekler.
   Future<void> dahaFazlaYukle() async {
-    if (_yukleniyor || !dahaVarMi) return;
+    // Tazeleme sürerken sayfalama başlatılmıyor: liste birazdan sıfırdan
+    // kurulacak, üzerine eklenecek sayfanın anlamı kalmaz.
+    if (_dahaYukleniyor || _yukleniyor || !dahaVarMi) return;
 
-    _yukleniyor = true;
+    final sira = _istekSirasi;
+
+    _dahaYukleniyor = true;
     notifyListeners();
 
     try {
@@ -83,6 +122,12 @@ class YoneticiSiparisProvider extends ChangeNotifier {
         limit: _sayfaBoyutu,
       );
 
+      // Bu sayfa uçarken süzgeç değişmiş ya da liste tazelenmişse sonuç
+      // atılıyor. Eklenseydi eski süzgecin satırları yeni listenin altına
+      // yapışır, `_sayfa` ileri kayar ve yeni süzgecin o sayfası hiç
+      // istenmezdi.
+      if (sira != _istekSirasi) return;
+
       _siparisler.addAll(sonuc.kayitlar);
       _sayfa = sonuc.sayfa;
       _toplamSayfa = sonuc.toplamSayfa;
@@ -90,7 +135,7 @@ class YoneticiSiparisProvider extends ChangeNotifier {
     } catch (_) {
       // Eldeki liste korunuyor; yönetici yeniden deneyebilir.
     } finally {
-      _yukleniyor = false;
+      _dahaYukleniyor = false;
       notifyListeners();
     }
   }

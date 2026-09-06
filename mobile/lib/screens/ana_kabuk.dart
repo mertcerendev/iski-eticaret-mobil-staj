@@ -4,6 +4,8 @@ import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import '../providers/favori_provider.dart';
 import '../providers/sepet_provider.dart';
+import '../providers/siparis_provider.dart';
+import '../providers/yonetici_siparis_provider.dart';
 import 'ana_ekran.dart';
 import 'favoriler_ekrani.dart';
 import 'profil_ekrani.dart';
@@ -73,18 +75,23 @@ class _AnaKabukDurumu extends State<AnaKabuk> {
     if (girisVar == _sonHal) return;
     _sonHal = girisVar;
 
-    final favoriler = context.read<FavoriProvider>();
-    final sepet = context.read<SepetProvider>();
-
     if (girisVar) {
       // Kartlardaki kalpler ve sepet rozeti daha ilk karede doğru çizilsin
-      // diye sekmeye girilmesi beklenmiyor.
-      favoriler.yukle();
-      sepet.yukle();
-    } else {
-      favoriler.temizle();
-      sepet.temizle();
+      // diye sekmeye girilmesi beklenmiyor. Sipariş listeleri burada
+      // çekilmiyor; onlar kendi ekranları açıldığında yükleniyor.
+      context.read<FavoriProvider>().yukle();
+      context.read<SepetProvider>().yukle();
+      return;
     }
+
+    // Çıkışta kişiye bağlı ne varsa siliniyor. Sipariş listeleri de dahil:
+    // ekranları açılışta istek atıyor ama yanıt gelene kadar eldeki listeyi
+    // çizmeye devam ediyorlar, dolayısıyla bir sonraki kullanıcı öncekinin
+    // siparişlerini görebiliyordu.
+    context.read<FavoriProvider>().temizle();
+    context.read<SepetProvider>().temizle();
+    context.read<SiparisProvider>().temizle();
+    context.read<YoneticiSiparisProvider>().temizle();
   }
 
   @override

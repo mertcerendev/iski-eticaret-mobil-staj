@@ -98,11 +98,19 @@ class UrunProvider extends ChangeNotifier {
 
   /// Ekran ilk açıldığında bir kez çağrılır.
   Future<void> baslat() async {
-    await Future.wait([
-      _kategorileriYukle(),
-      _seritleriYukle(),
-      yenidenYukle(),
-    ]);
+    await Future.wait([_kategorileriYukle(), tazele()]);
+  }
+
+  /// Ana ekranın tamamını yeniler: hem keşif şeritleri hem ürün listesi.
+  ///
+  /// Şeritler `yenidenYukle` içine konmadı; o metot her süzgeç değişiminde
+  /// ve her aramada çalışıyor, şeritlerin ise sabit kalması gerekiyor.
+  /// Ama şeritler de bir yerde tazelenmeliydi: yalnız açılışta doldurulunca
+  /// yönetici bir ürünü sildiğinde ızgaradan kalkıyor, şeritte kalmaya
+  /// devam ediyordu — üstelik oradan açılan detay artık var olmayan bir
+  /// ürünü gösteriyordu.
+  Future<void> tazele() async {
+    await Future.wait([_seritleriYukle(), yenidenYukle()]);
   }
 
   /// Keşif şeritlerini bir kez doldurur.
@@ -319,9 +327,9 @@ class UrunProvider extends ChangeNotifier {
     try {
       await cagri();
 
-      // Liste sunucudan yeniden çekiliyor; `yenidenYukle` kendi içinde
-      // `notifyListeners` çağırıyor.
-      await yenidenYukle();
+      // Liste ve keşif şeritleri sunucudan yeniden çekiliyor; `tazele`
+      // kendi içinde `notifyListeners` çağırıyor.
+      await tazele();
 
       return null;
     } catch (hata) {

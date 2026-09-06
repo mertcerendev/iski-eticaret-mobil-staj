@@ -112,7 +112,9 @@ class _AnaEkraniDurumu extends State<AnaEkran> {
             )
           : null,
       body: RefreshIndicator(
-        onRefresh: saglayici.yenidenYukle,
+        // Şeritler de yenileniyor: kullanıcının aşağı çekmesi "ekrandaki
+        // her şeyi tazele" demek.
+        onRefresh: saglayici.tazele,
         child: CustomScrollView(
           controller: _kaydirmaDenetleyici,
           slivers: [

@@ -97,10 +97,25 @@ class _GirisEkraniDurumu extends State<GirisEkrani> {
       return;
     }
 
-    // Bu ekrana kayıt ekranından da gelinmiş olabilir. `pop` yerine
-    // `popUntil` kullanılıyor: yığında ne varsa temizlenip kullanıcı
-    // gezindiği sekmeye geri bırakılıyor.
-    yonlendirici.popUntil((rota) => rota.isFirst);
+    // Yalnızca bu ekran kapanıyor. Önce `popUntil` ile yığının tamamı
+    // atılıyordu; o zaman ürün detayından "Sepete Ekle" deyip giriş yapan
+    // kullanıcı, almak istediği ürünün ekranını da kaybedip ana ızgaraya
+    // düşüyordu. Artık girişi isteyen ekran neyse ona geri dönülüyor.
+    yonlendirici.pop(true);
+  }
+
+  /// Kayıt ekranını açar; orada hesap açıldıysa bu ekran da kapatılır.
+  ///
+  /// Kayıt sunucudan belirteci de aldığı için kullanıcı zaten girmiş
+  /// sayılıyor; altta duran giriş ekranının açık kalmasının anlamı yok.
+  Future<void> _kayitAc() async {
+    final yonlendirici = Navigator.of(context);
+
+    final kayitOldu = await yonlendirici.push<bool>(
+      MaterialPageRoute(builder: (_) => const KayitEkrani()),
+    );
+
+    if (kayitOldu == true && mounted) yonlendirici.pop(true);
   }
 
   @override
@@ -189,13 +204,7 @@ class _GirisEkraniDurumu extends State<GirisEkrani> {
                   const SizedBox(height: 12),
 
                   TextButton(
-                    onPressed: islemSuruyor
-                        ? null
-                        : () => Navigator.of(context).push(
-                              MaterialPageRoute(
-                                builder: (_) => const KayitEkrani(),
-                              ),
-                            ),
+                    onPressed: islemSuruyor ? null : _kayitAc,
                     child: const Text('Hesabınız yok mu? Kayıt olun'),
                   ),
                 ],

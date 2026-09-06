@@ -41,6 +41,18 @@ class SiparisProvider extends ChangeNotifier {
     return null;
   }
 
+  /// Çıkış yapıldığında çağrılır.
+  ///
+  /// Sipariş geçmişi kullanıcıya ait. Temizlenmezse çıkan kişinin
+  /// siparişleri bellekte kalıyor ve ardından giren başka biri ekranı
+  /// açtığında, kendi listesi sunucudan gelene kadar onları görüyordu —
+  /// istek başarısız olursa kalıcı olarak.
+  void temizle() {
+    _siparisler.clear();
+    _hata = null;
+    notifyListeners();
+  }
+
   Future<void> yukle() async {
     _yukleniyor = true;
     _hata = null;

@@ -46,11 +46,12 @@ class _KayitEkraniDurumu extends State<KayitEkrani> {
     if (!mounted) return;
 
     if (basarili) {
-      // Kayıt başarılı: sunucu token de döndürdüğü için kullanıcı zaten
-      // giriş yapmış sayılır. Altta giriş ekranı da durabileceğinden tek
-      // `pop` yetmez; yığın kökene kadar temizlenip kullanıcı gezindiği
-      // sekmeye bırakılıyor.
-      yonlendirici.popUntil((rota) => rota.isFirst);
+      // Kayıt başarılı: sunucu belirteci de döndürdüğü için kullanıcı zaten
+      // giriş yapmış sayılır. `true` döndürülüyor; bu ekranı giriş ekranı
+      // açtıysa o da kendini kapatıyor, profilden açıldıysa yalnız bu ekran
+      // kapanıyor. Yığının tamamını atmak, kullanıcıyı geldiği yerden
+      // koparıyordu.
+      yonlendirici.pop(true);
       return;
     }
 
