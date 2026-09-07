@@ -107,14 +107,14 @@ gözden geçirilip değiştirilmesi gerekenler olabilir.
 | 31 | Deri Ceket | Giyim | [Black worn leather jacket detail 1.jpg](https://commons.wikimedia.org/wiki/File:Black_worn_leather_jacket_detail_1.jpg) | CC0 |
 | 32 | Klasik Gömlek | Giyim | [Camisade puño doble.jpg](https://commons.wikimedia.org/wiki/File:Camisade_pu%C3%B1o_doble.jpg) | CC BY-SA 3.0 |
 | 33 | Yün Kazak | Giyim | [Swiss Army Wool Sweater (15695462777).jpg](https://commons.wikimedia.org/wiki/File:Swiss_Army_Wool_Sweater_(15695462777).jpg) | CC BY 2.0 |
-| 34 | Şort | Giyim | [Kopfloser Böhringer.JPG](https://commons.wikimedia.org/wiki/File:Kopfloser_B%C3%B6hringer.JPG) | CC BY-SA 2.5 |
+| 34 | Şort | Giyim | [Cargo shorts.jpg](https://commons.wikimedia.org/wiki/File:Cargo_shorts.jpg) | CC0 |
 | 35 | Yazlık Elbise | Giyim | [Woman modelling a summer dress, 1954 (19270529340).j](https://commons.wikimedia.org/wiki/File:Woman_modelling_a_summer_dress,_1954_(19270529340).jpg) | No restrictions |
-| 36 | Midi Etek | Giyim | [Pleated skirt with black opaque tights.jpg](https://commons.wikimedia.org/wiki/File:Pleated_skirt_with_black_opaque_tights.jpg) | CC0 |
+| 36 | Midi Etek | Giyim | [Woman wearing black turtleneck and blue skirt.jpg](https://commons.wikimedia.org/wiki/File:Woman_wearing_black_turtleneck_and_blue_skirt.jpg) | CC BY 2.0 |
 | 37 | Kışlık Mont | Giyim | [HK TKO 將軍澳 Tseung Kwan O PopCorn mall shop Uniqlo Cl](https://commons.wikimedia.org/wiki/File:HK_TKO_%E5%B0%87%E8%BB%8D%E6%BE%B3_Tseung_Kwan_O_PopCorn_mall_shop_Uniqlo_Clothing_Store_%E5%86%AC%E5%AD%A3_winter_top_December_2022_Px3_24_Parka_jackets.jpg) | CC BY-SA 4.0 |
 | 38 | Örgü Bere | Giyim | [Beanie hat by Polo Ralph Lauren.jpg](https://commons.wikimedia.org/wiki/File:Beanie_hat_by_Polo_Ralph_Lauren.jpg) | CC BY 2.0 |
 | 39 | Yün Atkı | Giyim | [Knit cap and loop scarf set.jpg](https://commons.wikimedia.org/wiki/File:Knit_cap_and_loop_scarf_set.jpg) | CC BY-SA 4.0 |
-| 40 | Kışlık Eldiven | Giyim | [Colour-blocking with burgundy gloves and tights to c](https://commons.wikimedia.org/wiki/File:Colour-blocking_with_burgundy_gloves_and_tights_to_contrast_with_an_amber_dress_and_beret.jpg) | CC BY-SA 4.0 |
-| 41 | Çorap Seti | Giyim | [Socks the Cat Explores.jpg](https://commons.wikimedia.org/wiki/File:Socks_the_Cat_Explores.jpg) | Public domain |
+| 40 | Kışlık Eldiven | Giyim | [Two pairs of mens leather gloves from Randers Handsk](https://commons.wikimedia.org/wiki/File:Two_pairs_of_mens_leather_gloves_from_Randers_Handsker.jpg) | CC BY-SA 4.0 |
+| 41 | Çorap Seti | Giyim | [BLW Pair of socks.jpg](https://commons.wikimedia.org/wiki/File:BLW_Pair_of_socks.jpg) | CC BY-SA 2.0 uk |
 | 42 | Deri Kemer | Giyim | [Germany Belt-and-Buckle-02.jpg](https://commons.wikimedia.org/wiki/File:Germany_Belt-and-Buckle-02.jpg) | CC BY-SA 3.0 |
 | 43 | Deri Bot | Giyim | [Leather boots men's.jpg](https://commons.wikimedia.org/wiki/File:Leather_boots_men%27s.jpg) | CC BY-SA 4.0 |
 | 44 | Şapka | Giyim | [Baseball cap.png](https://commons.wikimedia.org/wiki/File:Baseball_cap.png) | CC BY 4.0 |
