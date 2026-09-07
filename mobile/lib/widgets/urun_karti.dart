@@ -92,11 +92,7 @@ class UrunKarti extends StatelessWidget {
                         ),
                       ],
                     ),
-                    child: SizedBox(
-                      width: 36,
-                      height: 36,
-                      child: FavoriDugmesi(urun: urun),
-                    ),
+                    child: FavoriDugmesi(urun: urun, kutu: 36),
                   ),
                 ),
               ],
